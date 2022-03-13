@@ -1,0 +1,67 @@
+%% ГОСТ 7.32-2017
+%%
+%% 6.2 Построение отчёта
+%%
+%% 6.2.1 Наименования структурных элементов отчёта: "СПИСОК ИСПОЛНИТЕЛЕЙ", "РЕФЕРАТ", "СОДЕРЖАНИЕ", "ТЕРМИНЫ И ОПРЕДЕЛЕНИЯ", "ПЕРЕЧЕНЬ СОКРАЩЕНИЙ И ОБОЗНАЧЕНИЙ", "ВВЕДЕНИЕ", "ЗАКЛЮЧЕНИЕ", "СПИСОК ИСПОЛЬЗОВАННЫХ ИСТОЧНИКОВ", "ПРИЛОЖЕНИЕ" служат заголовками структурных элементов отчёта.
+
+\AtBeginDocument{\renewcommand\contentsname{Содержание}}
+
+%%
+%% Заголовки структурных элементов следует располагать в середине строки без точки в конце, прописными буквами, не подчёркивая.
+%% Каждый структурный элемент и каждый раздел основной части отчёта начинают с новой страницы.
+
+\RequirePackage{titlesec}
+
+\newcommand{\ChapterLeftMargin}{}
+\newcommand{\ChapterFormat}{}
+\newcommand{\ChapterSep}{}
+\newcommand{\ChapterBeforeCode}{}
+
+\newcommand{\SetMainPartChapterSettings}{%
+	\renewcommand{\ChapterLeftMargin}{\parindent}%
+	\renewcommand{\ChapterFormat}{\bfseries}%
+	\renewcommand{\ChapterSep}{1em}%
+	\renewcommand{\ChapterBeforeCode}{}%
+}
+
+\newcommand{\SetStructuralElementChapterSettings}{%
+	\renewcommand{\ChapterLeftMargin}{0pt}%
+	\renewcommand{\ChapterFormat}{\filcenter\bfseries}%
+	\renewcommand{\ChapterSep}{}%
+	\renewcommand{\ChapterBeforeCode}{\MakeUppercase}%
+}
+
+\SetStructuralElementChapterSettings
+
+\titlespacing*{\chapter}{\ChapterLeftMargin}{-30pt}{8pt}
+\titleformat{\chapter}[block]{\ChapterFormat}{\thechapter}{\ChapterSep}{\ChapterBeforeCode}{}
+
+\newcommand{\StructuralElement}[1]{%
+	\chapter*{#1}%
+	\addcontentsline{toc}{chapter}{\MakeUppercase{#1}}%
+}
+
+\newenvironment{MainPart}%
+	{\SetMainPartChapterSettings}%
+	{\SetStructuralElementChapterSettings}
+
+%%
+%% 6.2.2 Основную часть отчёта следует делить на разделы, подразделы и пункты.
+%% Пункты при необходимости могут делиться на подпункты.
+%% Разделы и подразделы отчёта должны иметь заголовки.
+%% Пункты и подпункты, как правило, заголовков не имеют.
+%%
+%% 6.2.3 Заголовки разделов и подразделов основной части отчёта следует начинать с абзацного отступа и размещать после порядкового номера, печатать с прописной буквы, полужирным шрифтом, не подчёркивать, без точки в конце.
+%% Пункты и подпункты могут иметь только порядковый номер без заголовка, начинающийся с абзацного отступа.
+
+\titlespacing*{\section}{\parindent}{*4}{*2}
+\titlespacing*{\subsection}{\parindent}{*4}{*4}
+\titlespacing*{\subsubsection}{\parindent}{*4}{*4}
+\titlespacing*{\paragraph}{\parindent}{*0}{*1}
+\titleformat{\section}{\bfseries}{\thesection}{1em}{}{}{}
+\titleformat{\subsection}{\bfseries}{\thesubsection}{1em}{}{}{}
+\titleformat{\subsubsection}{\bfseries}{\thesubsubsection}{1em}{}{}{}
+
+%%
+%% 6.2.4 Если заголовок включает несколько предложений, их разделяют точками.
+%% Переносы слов в заголовках не допускаются.
