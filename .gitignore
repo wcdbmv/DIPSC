@@ -12,3 +12,7 @@
 # Python
 __pycache__/
 env/
+*.sqlite3
+
+# PyCharm
+.idea/
