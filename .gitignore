@@ -8,3 +8,7 @@
 *.run.xml
 *.synctex.gz
 *.toc
+
+# Python
+__pycache__/
+env/
