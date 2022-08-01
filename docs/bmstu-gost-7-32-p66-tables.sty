@@ -11,6 +11,20 @@
 	}%
 }
 
+\usepackage{multirow}
+
+\newcommand{\TableData}[2]{%
+	\parbox{#1}{%
+		\vspace{.5\baselineskip}%
+		#2%
+		\vspace{.5\baselineskip}%
+	}%
+}
+
+\newcommand{\TableHeader}[2]{%
+	\TableData{#1}{\centering{\textbf{#2}}}%
+}
+
 %%
 %% 6.6.1 Цифровой материал должен оформляться в виде таблиц.
 %% Таблицы применяют для наглядности и удобства сравнения показателей.
