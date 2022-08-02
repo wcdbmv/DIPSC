@@ -11,6 +11,8 @@ class Tag(models.Model):
 
 
 class Vote(models.Model):
+    vote_uid = models.UUIDField(default=uuid.uuid4, editable=False)
+
     VALUES = (
         ('UP', 1),
         ('DOWN', -1),

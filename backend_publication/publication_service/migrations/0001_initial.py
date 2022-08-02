@@ -26,6 +26,7 @@ class Migration(migrations.Migration):
             name='Vote',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('vote_uid', models.UUIDField(default=uuid.uuid4, editable=False)),
                 ('value', models.SmallIntegerField(choices=[('UP', 1), ('DOWN', -1)])),
                 ('user_uid', models.UUIDField(default=uuid.uuid4, editable=False)),
                 ('object_id', models.PositiveIntegerField()),
