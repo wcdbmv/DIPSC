@@ -3,25 +3,25 @@ from rest_framework import serializers
 from .models import Tag, Vote, Publication, Comment
 
 
-class TagSerializer(serializers.HyperlinkedModelSerializer):
+class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = serializers.ALL_FIELDS
 
 
-class VoteSerializer(serializers.HyperlinkedModelSerializer):
+class VoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vote
-        fields = ['id', 'vote_uid', 'value', 'user_uid', 'content_object']
+        fields = serializers.ALL_FIELDS
 
 
-class PublicationSerializer(serializers.HyperlinkedModelSerializer):
+class PublicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Publication
         fields = serializers.ALL_FIELDS
 
 
-class CommentSerializer(serializers.HyperlinkedModelSerializer):
+class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = serializers.ALL_FIELDS
