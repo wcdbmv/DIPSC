@@ -6,10 +6,10 @@ from rest_framework.decorators import api_view
 
 
 class ServiceUrl:
-    AUTH = 'http://127.0.0.1:8080'
-    PUBLICATION = 'http://127.0.0.1:8082'
-    STATISTICS = 'http://127.0.0.1:8083'
+    SESSION = 'http://127.0.0.1:8082'
+    PUBLICATION = 'http://127.0.0.1:8083'
     SUBSCRIPTION = 'http://127.0.0.1:8084'
+    STATISTICS = 'http://127.0.0.1:8085'
 
 
 def get(request: Request, url: str) -> HttpResponse:
