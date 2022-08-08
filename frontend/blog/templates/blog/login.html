@@ -1,0 +1,44 @@
+{% extends "blog/base.html" %}
+
+{% block content %}
+	<form method="post" action="{% url 'login' %}" class="form-sign">
+
+		{% csrf_token %}
+
+		{% if form.errors %}
+			<div class="alert alert-danger">Your username and password didn't match. Please try again.</div>
+		{% else %}
+			{% if next %}
+				{% if user.is_authenticated %}
+					<div class="alert alert-info">Your account doesn't have access to this page. To
+						proceed, please login with an account that has access.
+					</div>
+				{% else %}
+					<div class="alert alert-info">Please login to see this page.</div>
+				{% endif %}
+			{% endif %}
+		{% endif %}
+
+		<div class="form-group">
+			{% if form.username.errors %}
+				<label class="alert alert-danger">{{ form.username.errors }}</label>
+			{% endif %}
+			<input type="text" placeholder="Username" class="form-control" name="username" required>
+		</div>
+
+		<div class="form-group">
+			{% if form.password.errors %}
+				<label class="alert alert-danger">{{ form.password.errors }}</label>
+			{% endif %}
+			<input type="password" placeholder="Password" class="form-control" name="password" required>
+		</div>
+
+		<div class="form-group">
+			<button type="submit" class="btn btn-primary btn-block">Login</button>
+		</div>
+
+		<!-- Form field - next -->
+		<!-- Used to configure redirect after successful login -->
+		<input type="hidden" name="next" value="{% url 'blog:feed' %}"/>
+	</form>
+{% endblock content %}

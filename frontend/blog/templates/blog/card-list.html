@@ -1,0 +1,71 @@
+{% load define %}
+
+<div class="card-list">
+	{% for object in object_list %}
+		<div class="card shadow-sm mb-4">
+			<div class="card-body">
+				{% if object.title %}  {# it is a publication #}
+					<h1 class="card-title"><a
+						href="{% url 'blog:publications' object.pk %}">{{ object.title }}</a>
+					</h1>
+				{% endif %}
+				<div class="card-subtitle mb-2 text-muted">
+					<span class="vote mr-2">
+						<div class="btn-group btn-group-sm" role="group">
+							{% if not user.is_authenticated %}
+								{% define "disabled" as button_state %}
+							{% endif %}
+							{% if object.title %}
+								{% define "publication" as type %}
+							{% else %}
+								{% define "comment" as type %}
+							{% endif %}
+							<button type="button" class="btn btn-outline-success"
+							        data-id="{{ object.id }}"
+							        data-type="{{ type }}"
+							        data-action="upvote" {{ button_state }}>+</button>
+							<button type="button" class="btn btn-outline-secondary"
+							        data-id="{{ object.id }}"
+							        data-count="rating"
+							        disabled>{{ object.rating }}</button>
+							<button type="button" class="btn btn-outline-danger"
+							        data-id="{{ object.id }}"
+							        data-type="{{ type }}"
+							        data-action="downvote" {{ button_state }}>-</button>
+						</div>
+					</span>
+					<span class="info mr-2">
+						Created at {{ object.pub_date }} by
+						<a href="{% url 'blog:user_publications' object.user.username %}">{{ object.user.username }}</a>
+					</span>
+					{% if object.tags.all %}  {# it is a publication #}
+						<span class="tags">
+							Tags:
+							{% for tag in object.tags.all %}
+								<a href="{% url 'blog:tag' tag %}">{{ tag }}</a>
+							{% endfor %}
+						</span>
+					{% endif %}
+				</div>
+				<p class="card-text"> {{ object.body }}</p>
+				{% if not object.title and object.user == user %}
+					<div class="row">
+						<a href="{% url 'blog:delete_comment' object.pk %}"
+						   class="col-md-2 pull-right">
+							<button type="button" class="btn btn-primary btn-block">Delete
+							</button>
+						</a>
+						<a href="{% url 'blog:update_comment' object.pk %}"
+						   class="col-md-2 pull-right">
+							<button type="button" class="btn btn-primary btn-block">Update
+							</button>
+						</a>
+					</div>
+				{% endif %}
+			</div>
+		</div>
+	{% endfor %}
+	{% if not object_list %}
+		<p class="lead">No content here</p>
+	{% endif %}
+</div>

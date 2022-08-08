@@ -1,0 +1,30 @@
+{% extends "blog/base.html" %}
+
+{% block content %}
+	<form action="" method="post" class="form-create">
+
+		{% csrf_token %}
+
+		{% if form.title %}
+			<div class="form-group">
+				{% if form.title.errors %}
+					<label class="alert alert-danger">{{ form.title.errors }}</label>
+				{% endif %}
+				<input type="text" placeholder="Title" class="form-control" name="title"
+				       value="{{ form.title.value|default:"" }}" required>
+			</div>
+		{% endif %}
+
+		<div class="form-group">
+			{% if form.body.errors %}
+				<label class="alert alert-danger">{{ form.body.errors }}</label>
+			{% endif %}
+			<textarea placeholder="Body" class="form-control" name="body" rows="10"
+			          required>{{ form.body.value|default:"" }}</textarea>
+		</div>
+
+		<div class="form-group">
+			<button type="submit" class="btn btn-primary btn-block">Save</button>
+		</div>
+	</form>
+{% endblock content %}

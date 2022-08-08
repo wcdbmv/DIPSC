@@ -1,0 +1,22 @@
+.form-sign {
+    width: 100%;
+    max-width: 330px;
+    padding: 15px;
+    margin: auto;
+}
+
+.form-create {
+    width: 100%;
+    max-width: 800px;
+    padding: 15px;
+    margin: auto;
+}
+
+a {
+    transition: all .2s;
+}
+
+a:hover, a:focus, a:active {
+    color: purple;
+    text-decoration: none;
+}

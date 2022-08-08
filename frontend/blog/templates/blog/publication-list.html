@@ -1,0 +1,21 @@
+{% extends "blog/base.html" %}
+
+{% block content %}
+
+	<!-- Show this section only for User Blog view -->
+	{% if first_name or last_name %}
+		<div class="jumbotron">
+			<h1 class="display-4">{{ first_name }} {{ last_name }} — Blog</h1>
+		</div>
+	{% elif tag %}
+		<div class="jumbotron">
+			<h1 class="display-4">Tag: {{ tag }}</h1>
+		</div>
+	{% endif %}
+
+	<!-- Show List of Posts -->
+	{% include "blog/card-list.html" %}
+
+	{% include "blog/pagination.html" %}
+
+{% endblock content %}

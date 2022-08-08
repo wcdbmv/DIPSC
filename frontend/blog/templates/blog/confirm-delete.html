@@ -1,0 +1,19 @@
+{% extends "blog/base.html" %}
+{% load define %}
+
+{% block content %}
+	<form action="" method="post" class="form-create">
+		{% csrf_token %}
+		{% if object.title %}
+			{% define "Publication" as type %}
+			{% define object.title as prompt %}
+		{% else %}
+			{% define "Comment" as type %}
+			{% define object.body as prompt %}
+		{% endif %}
+		<div class="alert alert-info">Are you sure you want to delete {{ type }}: "{{ prompt }}"?</div>
+		<div class="form-group">
+			<button type="submit" class="btn btn-primary btn-block">Confirm</button>
+		</div>
+	</form>
+{% endblock content %}
