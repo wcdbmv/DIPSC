@@ -1,3 +1,10 @@
-from django.shortcuts import render
+from rest_framework import pagination, viewsets
 
-# Create your views here.
+from .models import UuidUser
+from .serializers import UuidUserSerializer
+
+
+class UuidUserViewSet(viewsets.ModelViewSet):
+    queryset = UuidUser.objects.all()
+    serializer_class = UuidUserSerializer
+    pagination_class = pagination.PageNumberPagination
