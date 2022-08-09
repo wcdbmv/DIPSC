@@ -6,31 +6,31 @@ from .views import *
 app_name = 'blog'
 urlpatterns = [
     # ex: /blog/feed/
-    path('feed/', feed, name='feed'),
+    path('feed/', feed_view, name='feed'),
     # ex: /blog/user/wcdbmv
-    # path('user/<str:username>', BlogView.as_view(), name='user_publications'),
-    # ex: /blog/article/5/
-    # path('article/<int:pk>/', ArticleView.as_view(), name='articles'),
-    # ex: /blog/article/5/upvote
-    # path('article/<int:pk>/upvote', VoteView.as_view(model=None, vote_value=1), name='article_upvote'),
-    # ex: /blog/article/5/downvote
-    # path('article/<int:pk>/downvote', VoteView.as_view(model=None, vote_value=-1), name='article_downvote'),
-    # ex: /blog/article/create/
-    # path('article/create/', ArticleCreate.as_view(), name='create_article'),
-    # ex: /blog/article/5/update
-    # path('article/create/<int:pk>/update', ArticleUpdate.as_view(), name='update_article'),
-    # ex: /blog/article/5/delete
-    # path('article/<int:pk>/delete', ArticleDelete.as_view(), name='delete_article'),
-    # ex: /blog/article/5/comment/
-    # path('article/<int:pk>/comment/', CommentCreate.as_view(), name='create_comment'),
-    # ex: /blog/article/5/update
-    # path('comment/<int:pk>/update', CommentUpdate.as_view(), name='update_comment'),
-    # ex: /blog/article/5/delete
-    # path('comment/<int:pk>/delete', CommentDelete.as_view(), name='delete_comment'),
+    path('user/<str:username>', blog_view, name='user_publications'),
+    # ex: /blog/publication/5/
+    path('publication/<uuid:pk>/', publication_view, name='publications'),
+    # ex: /blog/publication/5/upvote
+    path('publication/<uuid:pk>/upvote', publication_upvote_view, name='publication_upvote'),
+    # ex: /blog/publication/5/downvote
+    path('publication/<uuid:pk>/downvote', publication_downvote_view, name='publication_downvote'),
+    # ex: /blog/publication/create/
+    path('publication/create/', publication_create_view, name='create_publication'),
+    # ex: /blog/publication/5/update
+    path('publication/create/<uuid:pk>/update', publication_update_view, name='update_publication'),
+    # ex: /blog/publication/5/delete
+    path('publication/<uuid:pk>/delete', publication_delete_view, name='delete_publication'),
+    # ex: /blog/publication/5/comment/
+    path('publication/<uuid:pk>/comment/', comment_create_view, name='create_comment'),
+    # ex: /blog/publication/5/update
+    path('comment/<uuid:pk>/update', comment_update_view, name='update_comment'),
+    # ex: /blog/publication/5/delete
+    path('comment/<uuid:pk>/delete', comment_delete_view, name='delete_comment'),
     # ex: /blog/tag/job
-    # path('tag/<str:tag>/', TagView.as_view(), name='tag'),
+    path('tag/<str:tag>/', tag_view, name='tag'),
     # ex: /blog/comment/15/upvote
-    # path('comment/<int:pk>/upvote', VoteView.as_view(model=Comment, vote_value=1), name='article_upvote'),
+    path('comment/<uuid:pk>/upvote', comment_upvote_view, name='comment_upvote'),
     # ex: /blog/comment/15/downvote
-    # path('comment/<int:pk>/downvote', VoteView.as_view(model=Comment, vote_value=-1), name='article_downvote'),
+    path('comment/<uuid:pk>/downvote', comment_downvote_view, name='comment_downvote'),
 ]

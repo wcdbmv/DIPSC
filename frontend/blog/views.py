@@ -1,4 +1,5 @@
 import requests
+import uuid
 
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -58,7 +59,9 @@ class RegisterView(FormView):
 
     # This method is called when valid form data has been POSTed.
     def form_valid(self, form: RegisterForm) -> HttpResponse:
-        res = requests.post(ServiceUrl.GATEWAY + '/api/v1/users/', json=create_json_from_form(form, ['username', 'password', 'first_name', 'last_name', 'email']))
+        res = requests.post(ServiceUrl.GATEWAY + '/api/v1/users/',
+                            json=create_json_from_form(form,
+                                                       ['username', 'password', 'first_name', 'last_name', 'email']))
         if res.status_code != status.HTTP_201_CREATED:
             form.add_error(None, res.json())
             return super().form_invalid(form)
@@ -71,5 +74,57 @@ class RegisterView(FormView):
         return ret
 
 
-def feed(request: Request):
+def feed_view(request: Request) -> HttpResponse:
+    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
+
+
+def blog_view(request: Request, username: str) -> HttpResponse:
+    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
+
+
+def publication_view(request: Request, pk: uuid.UUID) -> HttpResponse:
+    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
+
+
+def publication_upvote_view(request: Request, pk: uuid.UUID) -> HttpResponse:
+    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
+
+
+def publication_downvote_view(request: Request, pk: uuid.UUID) -> HttpResponse:
+    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
+
+
+def publication_create_view(request: Request) -> HttpResponse:
+    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
+
+
+def publication_update_view(request: Request, pk: uuid.UUID) -> HttpResponse:
+    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
+
+
+def publication_delete_view(request: Request, pk: uuid.UUID) -> HttpResponse:
+    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
+
+
+def comment_create_view(request: Request) -> HttpResponse:
+    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
+
+
+def comment_update_view(request: Request, pk: uuid.UUID) -> HttpResponse:
+    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
+
+
+def comment_delete_view(request: Request, pk: uuid.UUID) -> HttpResponse:
+    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
+
+
+def tag_view(request: Request, tag: str) -> HttpResponse:
+    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
+
+
+def comment_upvote_view(request: Request, pk: uuid.UUID) -> HttpResponse:
+    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
+
+
+def comment_downvote_view(request: Request, pk: uuid.UUID) -> HttpResponse:
     return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
