@@ -11,10 +11,10 @@
 		<p>{{ publication.body }}</p>
 		{% if publication.user == user %}
 			<div class="row">
-				<a href="{% url 'blog:delete_publication' publication.pk %}" class="col-md-2 pull-right">
+				<a href="{% url 'blog:delete_publication' publication.publication_uid %}" class="col-md-2 pull-right">
 					<button type="button" class="btn btn-primary btn-block">Delete</button>
 				</a>
-				<a href="{% url 'blog:update_publication' publication.pk %}" class="col-md-2 pull-right">
+				<a href="{% url 'blog:update_publication' publication.publication_uid %}" class="col-md-2 pull-right">
 					<button type="button" class="btn btn-primary btn-block">Update</button>
 				</a>
 			</div>
@@ -26,7 +26,7 @@
 
 	<!-- Show Comment button only if User is authenticated -->
 	{% if user.is_authenticated %}
-		<a href="{% url 'blog:create_comment' publication.pk %}" class="col-md-2 pull-right">
+		<a href="{% url 'blog:create_comment' publication.publication_uid %}" class="col-md-2 pull-right">
 			<button type="button" class="btn btn-primary btn-block">Comment</button>
 		</a>
 	{% endif %}

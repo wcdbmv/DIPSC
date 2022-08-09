@@ -29,7 +29,9 @@ def set_auth_tokens(response: HttpResponse, tokens):
 
 
 def get_auth_user(request: Request) -> dict:
-    access_token = request.COOKIES['access_token']
+    access_token = request.COOKIES.get('access_token')
+    if access_token is None:
+        return {'is_authenticated': False}
     res = requests.post(ServiceUrl.GATEWAY + '/api/v1/user-by-token/', json={'token': access_token})
     if res.status_code != status.HTTP_200_OK:
         return {'is_authenticated': False}
@@ -75,7 +77,8 @@ class RegisterView(FormView):
 
 
 def feed_view(request: Request) -> HttpResponse:
-    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
+    res = requests.get(ServiceUrl.GATEWAY + '/api/v1/publications/')
+    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request), 'object_list': res.json()})
 
 
 def blog_view(request: Request, username: str) -> HttpResponse:

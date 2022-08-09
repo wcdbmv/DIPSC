@@ -18,10 +18,7 @@ from django.contrib.auth import views as auth_views
 from django.http import HttpResponseRedirect
 from django.urls import include, path
 
-try:
-    from frontend.blog.views import LoginView, RegisterView
-except:
-    from blog.views import LoginView, RegisterView
+from blog.views import LoginView, RegisterView
 
 
 urlpatterns = [

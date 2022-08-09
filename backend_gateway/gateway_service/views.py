@@ -1,6 +1,8 @@
+import json
 import requests
 
 from django.http import HttpResponse
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.request import Request
 from rest_framework.views import APIView
@@ -13,17 +15,23 @@ class ServiceUrl:
     STATISTICS = 'http://127.0.0.1:8085'
 
 
-def redirect_get(request: Request, url: str) -> HttpResponse:
+def raw_redirect_get(request: Request, url: str) -> requests.Response:
     params = request.query_params.copy()
     params['page'] = params.get('page', 1)
     params['page_size'] = params.get('page_size', 999999)
-    res = requests.get(url, params)
+    return requests.get(url, params)
+
+
+def make_response(res: requests.Response) -> HttpResponse:
     return HttpResponse(content=res.content, status=res.status_code, content_type=res.headers['content-type'])
+
+
+def redirect_get(request: Request, url: str) -> HttpResponse:
+    return make_response(raw_redirect_get(request, url))
 
 
 def redirect_post(request: Request, url: str) -> HttpResponse:
-    res = requests.post(url, data=request.data)
-    return HttpResponse(content=res.content, status=res.status_code, content_type=res.headers['content-type'])
+    return make_response(requests.post(url, data=request.data))
 
 
 class Users(APIView):
@@ -53,7 +61,17 @@ def votes(request: Request) -> HttpResponse:
 
 @api_view(['GET'])
 def publications(request: Request) -> HttpResponse:
-    return redirect_get(request, ServiceUrl.PUBLICATION + '/api/v1/publications/')
+    res = raw_redirect_get(request, ServiceUrl.PUBLICATION + '/api/v1/publications/')
+    if res.status_code != status.HTTP_200_OK:
+        return make_response(res)
+    pubs = res.json()
+    for pub in pubs:
+        res = raw_redirect_get(request, f'{ServiceUrl.SESSION}/api/v1/users/{pub["author_uid"]}/')
+        if res.status_code != status.HTTP_200_OK:
+            return make_response(res)
+        pub['author'] = res.json()
+        del pub['author_uid']
+    return HttpResponse(content=json.dumps(pubs), content_type='application/json')
 
 
 @api_view(['GET'])

@@ -2,10 +2,7 @@ from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand
 from faker import Faker
 
-try:
-    from backend_session.session_service.models import UuidUser
-except:
-    from session_service.models import UuidUser
+from session_service.models import UuidUser
 
 
 fake = Faker()
