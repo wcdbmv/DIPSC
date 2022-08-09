@@ -6,7 +6,7 @@ from django.views.generic.edit import FormView
 from rest_framework import status
 from rest_framework.request import Request
 
-from .forms import RegisterForm
+from .forms import LoginForm, RegisterForm
 
 
 class ServiceUrl:
@@ -14,11 +14,20 @@ class ServiceUrl:
     SESSION = 'http://localhost:8082'
 
 
-def create_json(form, fields) -> dict:
+def create_json_from_form(form, fields) -> dict:
     return {field: form.data[field] for field in fields}
 
 
-def get_user(request: Request) -> dict:
+def request_auth_tokens(form) -> requests.Response:
+    return requests.post(ServiceUrl.SESSION + '/api/token/', json=create_json_from_form(form, ['username', 'password']))
+
+
+def set_auth_tokens(response: HttpResponse, tokens):
+    response.set_cookie('access_token', tokens['access'], httponly=True)
+    response.set_cookie('refresh_token', tokens['refresh'], httponly=True)
+
+
+def get_auth_user(request: Request) -> dict:
     access_token = request.COOKIES['access_token']
     res = requests.post(ServiceUrl.GATEWAY + '/api/v1/user-by-token/', json={'token': access_token})
     if res.status_code != status.HTTP_200_OK:
@@ -26,29 +35,41 @@ def get_user(request: Request) -> dict:
     return {'is_authenticated': True, **res.json()}
 
 
+class LoginView(FormView):
+    template_name = 'blog/login.html'
+    form_class = LoginForm
+    success_url = '/blog/feed/'
+
+    # This method is called when valid form data has been POSTed.
+    def form_valid(self, form: RegisterForm) -> HttpResponse:
+        res = request_auth_tokens(form)
+        if res.status_code != status.HTTP_200_OK:
+            form.add_error(None, res.json())
+            return super().form_invalid(form)
+        ret = super().form_valid(form)
+        set_auth_tokens(ret, res.json())
+        return ret
+
+
 class RegisterView(FormView):
     template_name = 'blog/register.html'
     form_class = RegisterForm
     success_url = '/blog/feed/'
 
+    # This method is called when valid form data has been POSTed.
     def form_valid(self, form: RegisterForm) -> HttpResponse:
-        # This method is called when valid form data has been POSTed.
-        # It should return an HttpResponse.
-        res = requests.post(ServiceUrl.GATEWAY + '/api/v1/users/', json=create_json(form, ['username', 'password', 'first_name', 'last_name', 'email']))
+        res = requests.post(ServiceUrl.GATEWAY + '/api/v1/users/', json=create_json_from_form(form, ['username', 'password', 'first_name', 'last_name', 'email']))
         if res.status_code != status.HTTP_201_CREATED:
-            js = res.json()
-            form.add_error(None, js)
+            form.add_error(None, res.json())
             return super().form_invalid(form)
-        res = requests.post(ServiceUrl.SESSION + '/api/token/', json=create_json(form, ['username', 'password']))
+        res = request_auth_tokens(form)
         if res.status_code != status.HTTP_200_OK:
             print(res)
             raise res
-        data = res.json()
         ret = super().form_valid(form)
-        ret.set_cookie('access_token', data['access'], httponly=True)
-        ret.set_cookie('refresh_token', data['refresh'], httponly=True)
+        set_auth_tokens(ret, res.json())
         return ret
 
 
 def feed(request: Request):
-    return render(request, 'blog/publication-list.html', {'user': get_user(request)})
+    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})

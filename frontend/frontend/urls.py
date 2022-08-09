@@ -19,16 +19,16 @@ from django.http import HttpResponseRedirect
 from django.urls import include, path
 
 try:
-    from frontend.blog.views import RegisterView
+    from frontend.blog.views import LoginView, RegisterView
 except:
-    from blog.views import RegisterView
+    from blog.views import LoginView, RegisterView
 
 
 urlpatterns = [
     path('', lambda r: HttpResponseRedirect('blog/feed/')),
     path('admin/', admin.site.urls),
     path('blog/', include('blog.urls')),
-    path('login/', auth_views.LoginView.as_view(template_name='blog/login.html'), name='login'),
+    path('login/', LoginView.as_view(), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='blog:feed')),
     path('register/', RegisterView.as_view(), name='register'),
     path('', include('django.contrib.auth.urls')),  # for logout
