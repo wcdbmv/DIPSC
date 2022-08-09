@@ -16,6 +16,8 @@ class VoteSerializer(serializers.ModelSerializer):
 
 
 class PublicationSerializer(serializers.ModelSerializer):
+    tags = serializers.SlugRelatedField(slug_field='name', many=True, read_only=True)
+
     class Meta:
         model = Publication
         fields = serializers.ALL_FIELDS

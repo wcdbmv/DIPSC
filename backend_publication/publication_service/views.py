@@ -8,6 +8,7 @@ class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     pagination_class = pagination.PageNumberPagination
+    lookup_field = 'name'
 
 
 class VoteViewSet(viewsets.ModelViewSet):
