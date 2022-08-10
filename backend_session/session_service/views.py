@@ -1,3 +1,4 @@
+import django_filters.rest_framework
 from rest_framework import pagination, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.request import Request
@@ -12,6 +13,8 @@ class UuidUserViewSet(viewsets.ModelViewSet):
     queryset = UuidUser.objects.all()
     serializer_class = UuidUserSerializer
     pagination_class = pagination.PageNumberPagination
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
+    filterset_fields = ['username']
 
 
 @api_view(['POST'])

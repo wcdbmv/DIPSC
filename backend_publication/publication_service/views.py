@@ -1,3 +1,4 @@
+import django_filters.rest_framework
 from rest_framework import viewsets
 
 from .models import Tag, Vote, Publication, Comment
@@ -22,6 +23,8 @@ class PublicationViewSet(viewsets.ModelViewSet):
     queryset = Publication.objects.all()
     serializer_class = PublicationSerializer
     pagination_class = Pagination
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
+    filterset_fields = ['author_uid']
 
 
 class CommentViewSet(viewsets.ModelViewSet):

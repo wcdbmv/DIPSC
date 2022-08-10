@@ -1,7 +1,8 @@
+import os
 import requests
 import uuid
 
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, HttpResponseNotFound
 from django.shortcuts import render
 from django.views.generic.edit import FormView
 from rest_framework import status
@@ -10,8 +11,8 @@ from .forms import LoginForm, RegisterForm
 
 
 class ServiceUrl:
-    GATEWAY = 'http://localhost:8081'
-    SESSION = 'http://localhost:8082'
+    GATEWAY = os.getenv('BACKEND_GATEWAY_URL', 'http://localhost:8081')
+    SESSION = os.getenv('BACKEND_SESSION_URL', 'http://localhost:8082')
 
 
 def create_json_from_form(form, fields) -> dict:
@@ -84,7 +85,24 @@ def feed_view(request: HttpRequest) -> HttpResponse:
 
 
 def blog_view(request: HttpRequest, username: str) -> HttpResponse:
-    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
+    res = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/users/?username={username}')
+    if res.status_code != status.HTTP_200_OK:
+        print(res)
+        raise res
+    data = res.json()
+    if len(data) == 0:
+        return HttpResponseNotFound(f'User with username "{username}" not found')
+    user = data[0]
+    res = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/publications/?author_uid={user["id"]}')
+    if res.status_code != status.HTTP_200_OK:
+        print(res)
+        raise res
+    return render(request, 'blog/publication-list.html', {
+        'user': get_auth_user(request),
+        'first_name': user['first_name'],
+        'last_name': user['last_name'],
+        'response': res.json(),
+    })
 
 
 def publication_view(request: HttpRequest, pk: uuid.UUID) -> HttpResponse:
