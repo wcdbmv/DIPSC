@@ -1,7 +1,7 @@
 {% load define %}
 
 <div class="card-list">
-	{% for object in object_list %}
+	{% for object in response.items %}
 		<div class="card shadow-sm mb-4">
 			<div class="card-body">
 				{% if object.title %}  {# it is a publication #}
@@ -65,7 +65,7 @@
 			</div>
 		</div>
 	{% endfor %}
-	{% if not object_list %}
+	{% if not response.object_list %}
 		<p class="lead">No content here</p>
 	{% endif %}
 </div>

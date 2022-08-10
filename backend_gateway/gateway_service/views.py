@@ -64,14 +64,14 @@ def publications(request: Request) -> HttpResponse:
     res = raw_redirect_get(request, ServiceUrl.PUBLICATION + '/api/v1/publications/')
     if res.status_code != status.HTTP_200_OK:
         return make_response(res)
-    pubs = res.json()
-    for pub in pubs:
+    data = res.json()
+    for pub in data['items']:
         res = raw_redirect_get(request, f'{ServiceUrl.SESSION}/api/v1/users/{pub["author_uid"]}/')
         if res.status_code != status.HTTP_200_OK:
             return make_response(res)
         pub['author'] = res.json()
         del pub['author_uid']
-    return HttpResponse(content=json.dumps(pubs), content_type='application/json')
+    return HttpResponse(content=json.dumps(data), content_type='application/json')
 
 
 @api_view(['GET'])
