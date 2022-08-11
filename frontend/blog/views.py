@@ -152,7 +152,15 @@ def comment_delete_view(request: HttpRequest, pk: uuid.UUID) -> HttpResponse:
 
 
 def tag_view(request: HttpRequest, tag: str) -> HttpResponse:
-    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
+    res = paginated_request_get(request, f'{ServiceUrl.GATEWAY}/api/v1/publications/?tags__name={tag}')
+    if res.status_code != status.HTTP_200_OK:
+        print(res)
+        raise Exception(res.json())
+    return render(request, 'blog/publication-list.html', {
+        'user': get_auth_user(request),
+        'tag': tag,
+        'response': res.json(),
+    })
 
 
 def comment_upvote_view(request: HttpRequest, pk: uuid.UUID) -> HttpResponse:

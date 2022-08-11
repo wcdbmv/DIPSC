@@ -24,7 +24,7 @@ class PublicationViewSet(viewsets.ModelViewSet):
     serializer_class = PublicationSerializer
     pagination_class = Pagination
     filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
-    filterset_fields = ['author_uid']
+    filterset_fields = ['author_uid', 'tags__name']
 
 
 class CommentViewSet(viewsets.ModelViewSet):
