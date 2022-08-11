@@ -6,12 +6,12 @@ from django.db import models
 
 
 class Tag(models.Model):
-    tag_uid = models.UUIDField(default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.SlugField(unique=True)
 
 
 class Vote(models.Model):
-    vote_uid = models.UUIDField(default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     VALUES = (
         ('UP', 1),
@@ -21,12 +21,12 @@ class Vote(models.Model):
     user_uid = models.UUIDField(default=uuid.uuid4, editable=False)
 
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
+    object_id = models.UUIDField(editable=False)
     content_object = GenericForeignKey('content_type', 'object_id')
 
 
 class Publication(models.Model):
-    publication_uid = models.UUIDField(default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     author_uid = models.UUIDField(default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=255)
@@ -39,7 +39,8 @@ class Publication(models.Model):
 
 
 class Comment(models.Model):
-    comment_uid = models.UUIDField(default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
     author_uid = models.UUIDField(default=uuid.uuid4, editable=False)
     publication = models.ForeignKey(Publication, on_delete=models.CASCADE)
     body = models.TextField()

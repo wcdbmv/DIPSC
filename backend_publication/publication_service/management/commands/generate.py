@@ -72,10 +72,10 @@ class Command(BaseCommand):
         )
 
         through_model = Publication.tags.through
-        n_publications = Publication.objects.count()
         tag_ids = list(Tag.objects.values_list('id', flat=True))  # list for sample()
+        publication_ids = list(Publication.objects.values_list('id', flat=True))
         through_list = []
-        for publication_id in range(n_publications - publications + 1, n_publications + 1):
+        for publication_id in publication_ids:
             n_tags = Command.fast_randint(0, max_tags_per_publication)
             through_list += [
                 through_model(
@@ -88,13 +88,13 @@ class Command(BaseCommand):
 
     def create_comments(self, comments, max_sentences_per_comment):
         self.get_users()
-        publication_id_max = Publication.objects.count()
+        publication_ids = list(Publication.objects.values_list('id', flat=True))  # list for sample()
         Comment.objects.bulk_create(
             [
                 Comment(
                     body=fake.paragraph(nb_sentences=max_sentences_per_comment),
                     author_uid=random.choice(self.user_ids),
-                    publication_id=Command.fast_randint(1, publication_id_max),
+                    publication_id=random.choice(publication_ids),
                 )
                 for i in range(comments)
             ]
@@ -118,7 +118,7 @@ class Command(BaseCommand):
                 votes.append(
                     Vote(
                         value=value,
-                        object_id=model.pk,
+                        object_id=model.id,
                         content_type_id=model_type_id,
                         user_uid=user_id,
                     )

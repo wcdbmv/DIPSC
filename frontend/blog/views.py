@@ -70,17 +70,21 @@ class RegisterView(FormView):
         res = request_auth_tokens(form)
         if res.status_code != status.HTTP_200_OK:
             print(res)
-            raise res
+            raise Exception(res.json())
         ret = super().form_valid(form)
         set_auth_tokens(ret, res.json())
         return ret
 
 
-def feed_view(request: HttpRequest) -> HttpResponse:
+def paginated_request_get(request: HttpRequest, url) -> requests.Response:
     params = request.GET.copy()
     params['page'] = params.get('page', 1)
     params['page_size'] = params.get('page_size', 10)
-    res = requests.get(ServiceUrl.GATEWAY + '/api/v1/publications/', params)
+    return requests.get(url, params)
+
+
+def feed_view(request: HttpRequest) -> HttpResponse:
+    res = paginated_request_get(request, ServiceUrl.GATEWAY + '/api/v1/publications/')
     return render(request, 'blog/publication-list.html', {'user': get_auth_user(request), 'response': res.json()})
 
 
@@ -88,12 +92,12 @@ def blog_view(request: HttpRequest, username: str) -> HttpResponse:
     res = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/users/?username={username}')
     if res.status_code != status.HTTP_200_OK:
         print(res)
-        raise res
+        raise Exception(res.json())
     data = res.json()
     if len(data) == 0:
         return HttpResponseNotFound(f'User with username "{username}" not found')
     user = data[0]
-    res = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/publications/?author_uid={user["id"]}')
+    res = paginated_request_get(request, f'{ServiceUrl.GATEWAY}/api/v1/publications/?author_uid={user["id"]}')
     if res.status_code != status.HTTP_200_OK:
         print(res)
         raise res
@@ -106,7 +110,13 @@ def blog_view(request: HttpRequest, username: str) -> HttpResponse:
 
 
 def publication_view(request: HttpRequest, pk: uuid.UUID) -> HttpResponse:
-    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
+    res = paginated_request_get(request, f'{ServiceUrl.GATEWAY}/api/v1/publications/{pk}/')
+    if res.status_code != status.HTTP_200_OK:
+        if res.status_code == status.HTTP_404_NOT_FOUND:
+            return HttpResponseNotFound(f'Publication with uuid {pk} not found')
+        print(res)
+        raise res
+    return render(request, 'blog/publication.html', {'user': get_auth_user(request), 'response': res.json()})
 
 
 def publication_upvote_view(request: HttpRequest, pk: uuid.UUID) -> HttpResponse:

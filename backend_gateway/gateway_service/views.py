@@ -1,4 +1,6 @@
 import json
+import uuid
+
 import requests
 
 from django.http import HttpResponse
@@ -71,6 +73,31 @@ def publications(request: Request) -> HttpResponse:
             return make_response(res)
         pub['author'] = res.json()
         del pub['author_uid']
+    return HttpResponse(content=json.dumps(data), content_type='application/json')
+
+
+@api_view(['GET'])
+def publication(request: Request, uid: uuid.UUID) -> HttpResponse:
+    res = raw_redirect_get(request, f'{ServiceUrl.PUBLICATION}/api/v1/publications/{uid}/')
+    if res.status_code != status.HTTP_200_OK:
+        return make_response(res)
+    pub = res.json()
+    res = raw_redirect_get(request, f'{ServiceUrl.SESSION}/api/v1/users/{pub["author_uid"]}/')
+    if res.status_code != status.HTTP_200_OK:
+        return make_response(res)
+    pub['author'] = res.json()
+    del pub['author_uid']
+    res = raw_redirect_get(request, f'{ServiceUrl.PUBLICATION}/api/v1/comments/?publication={uid}')
+    if res.status_code != status.HTTP_200_OK:
+        return make_response(res)
+    data = res.json()
+    data['publication'] = pub
+    for comm in data['items']:
+        res = raw_redirect_get(request, f'{ServiceUrl.SESSION}/api/v1/users/{comm["author_uid"]}/')
+        if res.status_code != status.HTTP_200_OK:
+            return make_response(res)
+        comm['author'] = res.json()
+        del comm['author_uid']
     return HttpResponse(content=json.dumps(data), content_type='application/json')
 
 

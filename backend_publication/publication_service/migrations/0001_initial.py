@@ -17,27 +17,24 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Tag',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('tag_uid', models.UUIDField(default=uuid.uuid4, editable=False)),
+                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('name', models.SlugField(unique=True)),
             ],
         ),
         migrations.CreateModel(
             name='Vote',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('vote_uid', models.UUIDField(default=uuid.uuid4, editable=False)),
+                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('value', models.SmallIntegerField(choices=[('UP', 1), ('DOWN', -1)])),
                 ('user_uid', models.UUIDField(default=uuid.uuid4, editable=False)),
-                ('object_id', models.PositiveIntegerField()),
+                ('object_id', models.UUIDField(editable=False)),
                 ('content_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='contenttypes.contenttype')),
             ],
         ),
         migrations.CreateModel(
             name='Publication',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('publication_uid', models.UUIDField(default=uuid.uuid4, editable=False)),
+                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('author_uid', models.UUIDField(default=uuid.uuid4, editable=False)),
                 ('title', models.CharField(max_length=255)),
                 ('body', models.TextField()),
@@ -49,8 +46,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Comment',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('comment_uid', models.UUIDField(default=uuid.uuid4, editable=False)),
+                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('author_uid', models.UUIDField(default=uuid.uuid4, editable=False)),
                 ('body', models.TextField()),
                 ('pub_date', models.DateTimeField(auto_now_add=True, verbose_name='date published')),
