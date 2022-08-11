@@ -18,7 +18,7 @@ class Vote(models.Model):
         ('DOWN', -1),
     )
     value = models.SmallIntegerField(choices=VALUES)
-    user_uid = models.UUIDField(default=uuid.uuid4, editable=False)
+    user_uid = models.UUIDField(editable=False)
 
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.UUIDField(editable=False)
@@ -28,7 +28,7 @@ class Vote(models.Model):
 class Publication(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    author_uid = models.UUIDField(default=uuid.uuid4, editable=False)
+    author_uid = models.UUIDField(editable=False)
     title = models.CharField(max_length=255)
     body = models.TextField()
     pub_date = models.DateTimeField('date published', auto_now_add=True)
@@ -41,7 +41,7 @@ class Publication(models.Model):
 class Comment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    author_uid = models.UUIDField(default=uuid.uuid4, editable=False)
+    author_uid = models.UUIDField(editable=False)
     publication = models.ForeignKey(Publication, on_delete=models.CASCADE)
     body = models.TextField()
     pub_date = models.DateTimeField('date published', auto_now_add=True)

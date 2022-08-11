@@ -12,9 +12,9 @@ urlpatterns = [
     # ex: /blog/publication/5/
     path('publication/<uuid:pk>/', publication_view, name='publications'),
     # ex: /blog/publication/5/upvote
-    path('publication/<uuid:pk>/upvote', publication_upvote_view, name='publication_upvote'),
+    path('publication/<uuid:pk>/upvote', VoteView.as_view(content_type='publication', value=1), name='publication_upvote'),
     # ex: /blog/publication/5/downvote
-    path('publication/<uuid:pk>/downvote', publication_downvote_view, name='publication_downvote'),
+    path('publication/<uuid:pk>/downvote', VoteView.as_view(content_type='publication', value=-1), name='publication_downvote'),
     # ex: /blog/publication/create/
     path('publication/create/', publication_create_view, name='create_publication'),
     # ex: /blog/publication/5/update
@@ -30,7 +30,7 @@ urlpatterns = [
     # ex: /blog/tag/job
     path('tag/<str:tag>/', tag_view, name='tag'),
     # ex: /blog/comment/15/upvote
-    path('comment/<uuid:pk>/upvote', comment_upvote_view, name='comment_upvote'),
+    path('comment/<uuid:pk>/upvote', VoteView.as_view(content_type='comment', value=1), name='comment_upvote'),
     # ex: /blog/comment/15/downvote
-    path('comment/<uuid:pk>/downvote', comment_downvote_view, name='comment_downvote'),
+    path('comment/<uuid:pk>/downvote', VoteView.as_view(content_type='comment', value=-1), name='comment_downvote'),
 ]

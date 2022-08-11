@@ -4,7 +4,7 @@ import uuid
 
 from django.http import HttpRequest, HttpResponse, HttpResponseNotFound
 from django.shortcuts import render
-from django.views.generic.edit import FormView
+from django.views.generic.edit import FormView, View
 from rest_framework import status
 
 from .forms import LoginForm, RegisterForm
@@ -119,12 +119,23 @@ def publication_view(request: HttpRequest, pk: uuid.UUID) -> HttpResponse:
     return render(request, 'blog/publication.html', {'user': get_auth_user(request), 'response': res.json()})
 
 
-def publication_upvote_view(request: HttpRequest, pk: uuid.UUID) -> HttpResponse:
-    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
+class VoteView(View):
+    content_type = None
+    value = None
 
+    def post(self, request, pk: uuid.UUID):
+        user = get_auth_user(request)
+        res = requests.post(f'{ServiceUrl.GATEWAY}/api/v1/vote/', json={
+            'value': self.value,
+            'user_uid': user['id'],
+            'content_type': self.content_type,
+            'object_id': str(pk),
+        })
+        if res.status_code != status.HTTP_200_OK:
+            print(res)
+            raise Exception(res.json())
 
-def publication_downvote_view(request: HttpRequest, pk: uuid.UUID) -> HttpResponse:
-    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
+        return HttpResponse(content=res.content, content_type="application/json")
 
 
 def publication_create_view(request: HttpRequest) -> HttpResponse:
@@ -161,11 +172,3 @@ def tag_view(request: HttpRequest, tag: str) -> HttpResponse:
         'tag': tag,
         'response': res.json(),
     })
-
-
-def comment_upvote_view(request: HttpRequest, pk: uuid.UUID) -> HttpResponse:
-    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
-
-
-def comment_downvote_view(request: HttpRequest, pk: uuid.UUID) -> HttpResponse:
-    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})

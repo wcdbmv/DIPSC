@@ -17,11 +17,11 @@ class ServiceUrl:
     STATISTICS = 'http://127.0.0.1:8085'
 
 
-def raw_request_no_query(url: str) -> requests.Response:
+def raw_request_get_no_query(url: str) -> requests.Response:
     return requests.get(url)
 
 
-def raw_redirect_with_query(request: Request, url: str) -> requests.Response:
+def raw_redirect_get_with_query(request: Request, url: str) -> requests.Response:
     return requests.get(url, request.query_params.copy())
 
 
@@ -30,7 +30,7 @@ def make_response(res: requests.Response) -> HttpResponse:
 
 
 def redirect_get(request: Request, url: str) -> HttpResponse:
-    return make_response(raw_redirect_with_query(request, url))
+    return make_response(raw_redirect_get_with_query(request, url))
 
 
 def redirect_post(request: Request, url: str) -> HttpResponse:
@@ -62,8 +62,13 @@ def votes(request: Request) -> HttpResponse:
     return redirect_get(request, ServiceUrl.PUBLICATION + '/api/v1/votes/')
 
 
+@api_view(['POST'])
+def vote(request: Request) -> HttpResponse:
+    return redirect_post(request, ServiceUrl.PUBLICATION + '/api/v1/vote/')
+
+
 def replace_author(item):
-    res = raw_request_no_query(f'{ServiceUrl.SESSION}/api/v1/users/{item["author_uid"]}/')
+    res = raw_request_get_no_query(f'{ServiceUrl.SESSION}/api/v1/users/{item["author_uid"]}/')
     if res.status_code != status.HTTP_200_OK:
         return make_response(res)  # TODO
     item['author'] = res.json()
@@ -77,7 +82,7 @@ def replace_authors(items):
 
 @api_view(['GET'])
 def publications(request: Request) -> HttpResponse:
-    res = raw_redirect_with_query(request, ServiceUrl.PUBLICATION + '/api/v1/publications/')
+    res = raw_redirect_get_with_query(request, ServiceUrl.PUBLICATION + '/api/v1/publications/')
     if res.status_code != status.HTTP_200_OK:
         return make_response(res)
     data = res.json()
@@ -87,13 +92,13 @@ def publications(request: Request) -> HttpResponse:
 
 @api_view(['GET'])
 def publication(request: Request, uid: uuid.UUID) -> HttpResponse:
-    res = raw_redirect_with_query(request, f'{ServiceUrl.PUBLICATION}/api/v1/publications/{uid}/')
+    res = raw_redirect_get_with_query(request, f'{ServiceUrl.PUBLICATION}/api/v1/publications/{uid}/')
     if res.status_code != status.HTTP_200_OK:
         return make_response(res)
     data = {'publication': res.json()}
     replace_author(data['publication'])
 
-    res = raw_redirect_with_query(request, f'{ServiceUrl.PUBLICATION}/api/v1/comments/?publication={uid}')
+    res = raw_redirect_get_with_query(request, f'{ServiceUrl.PUBLICATION}/api/v1/comments/?publication={uid}')
     if res.status_code != status.HTTP_200_OK:
         return make_response(res)
     data.update(res.json())
