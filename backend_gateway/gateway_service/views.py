@@ -17,11 +17,12 @@ class ServiceUrl:
     STATISTICS = 'http://127.0.0.1:8085'
 
 
-def raw_redirect_get(request: Request, url: str) -> requests.Response:
-    params = request.query_params.copy()
-    params['page'] = params.get('page', 1)
-    params['page_size'] = params.get('page_size', 999999)
-    return requests.get(url, params)
+def raw_request_no_query(url: str) -> requests.Response:
+    return requests.get(url)
+
+
+def raw_redirect_with_query(request: Request, url: str) -> requests.Response:
+    return requests.get(url, request.query_params.copy())
 
 
 def make_response(res: requests.Response) -> HttpResponse:
@@ -29,7 +30,7 @@ def make_response(res: requests.Response) -> HttpResponse:
 
 
 def redirect_get(request: Request, url: str) -> HttpResponse:
-    return make_response(raw_redirect_get(request, url))
+    return make_response(raw_redirect_with_query(request, url))
 
 
 def redirect_post(request: Request, url: str) -> HttpResponse:
@@ -61,43 +62,43 @@ def votes(request: Request) -> HttpResponse:
     return redirect_get(request, ServiceUrl.PUBLICATION + '/api/v1/votes/')
 
 
+def replace_author(item):
+    res = raw_request_no_query(f'{ServiceUrl.SESSION}/api/v1/users/{item["author_uid"]}/')
+    if res.status_code != status.HTTP_200_OK:
+        return make_response(res)  # TODO
+    item['author'] = res.json()
+    del item['author_uid']
+
+
+def replace_authors(items):
+    for item in items:
+        replace_author(item)
+
+
 @api_view(['GET'])
 def publications(request: Request) -> HttpResponse:
-    res = raw_redirect_get(request, ServiceUrl.PUBLICATION + '/api/v1/publications/')
+    res = raw_redirect_with_query(request, ServiceUrl.PUBLICATION + '/api/v1/publications/')
     if res.status_code != status.HTTP_200_OK:
         return make_response(res)
     data = res.json()
-    for pub in data['items']:
-        res = raw_redirect_get(request, f'{ServiceUrl.SESSION}/api/v1/users/{pub["author_uid"]}/')
-        if res.status_code != status.HTTP_200_OK:
-            return make_response(res)
-        pub['author'] = res.json()
-        del pub['author_uid']
+    replace_authors(data['items'])
     return HttpResponse(content=json.dumps(data), content_type='application/json')
 
 
 @api_view(['GET'])
 def publication(request: Request, uid: uuid.UUID) -> HttpResponse:
-    res = raw_redirect_get(request, f'{ServiceUrl.PUBLICATION}/api/v1/publications/{uid}/')
+    res = raw_redirect_with_query(request, f'{ServiceUrl.PUBLICATION}/api/v1/publications/{uid}/')
     if res.status_code != status.HTTP_200_OK:
         return make_response(res)
-    pub = res.json()
-    res = raw_redirect_get(request, f'{ServiceUrl.SESSION}/api/v1/users/{pub["author_uid"]}/')
+    data = {'publication': res.json()}
+    replace_author(data['publication'])
+
+    res = raw_redirect_with_query(request, f'{ServiceUrl.PUBLICATION}/api/v1/comments/?publication={uid}')
     if res.status_code != status.HTTP_200_OK:
         return make_response(res)
-    pub['author'] = res.json()
-    del pub['author_uid']
-    res = raw_redirect_get(request, f'{ServiceUrl.PUBLICATION}/api/v1/comments/?publication={uid}')
-    if res.status_code != status.HTTP_200_OK:
-        return make_response(res)
-    data = res.json()
-    data['publication'] = pub
-    for comm in data['items']:
-        res = raw_redirect_get(request, f'{ServiceUrl.SESSION}/api/v1/users/{comm["author_uid"]}/')
-        if res.status_code != status.HTTP_200_OK:
-            return make_response(res)
-        comm['author'] = res.json()
-        del comm['author_uid']
+    data.update(res.json())
+    replace_authors(data['items'])
+
     return HttpResponse(content=json.dumps(data), content_type='application/json')
 
 
