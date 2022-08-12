@@ -37,8 +37,8 @@ def redirect_post(request: Request, url: str) -> HttpResponse:
     return make_response(requests.post(url, data=request.data))
 
 
-def redirect_put(request: Request, url: str) -> HttpResponse:
-    return make_response(requests.put(url, data=request.data))
+def redirect_patch(request: Request, url: str) -> HttpResponse:
+    return make_response(requests.patch(url, data=request.data))
 
 
 def redirect_delete(url: str) -> HttpResponse:
@@ -129,8 +129,8 @@ class Publication(APIView):
         return HttpResponse(content=json.dumps(data), content_type='application/json')
 
     @staticmethod
-    def put(request: Request, uid: uuid.UUID) -> HttpResponse:
-        return redirect_put(request, f'{ServiceUrl.PUBLICATION}/api/v1/publications/{uid}/')
+    def patch(request: Request, uid: uuid.UUID) -> HttpResponse:
+        return redirect_patch(request, f'{ServiceUrl.PUBLICATION}/api/v1/publications/{uid}/')
 
     @staticmethod
     def delete(request: Request, uid: uuid.UUID) -> HttpResponse:
@@ -153,8 +153,8 @@ class Comment(APIView):
         return redirect_get(request, f'{ServiceUrl.PUBLICATION}/api/v1/comments/{uid}/')
 
     @staticmethod
-    def put(request: Request, uid: uuid.UUID) -> HttpResponse:
-        return redirect_put(request, f'{ServiceUrl.PUBLICATION}/api/v1/comments/{uid}/')
+    def patch(request: Request, uid: uuid.UUID) -> HttpResponse:
+        return redirect_patch(request, f'{ServiceUrl.PUBLICATION}/api/v1/comments/{uid}/')
 
     @staticmethod
     def delete(request: Request, uid: uuid.UUID) -> HttpResponse:

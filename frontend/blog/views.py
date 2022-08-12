@@ -195,24 +195,47 @@ class CommentCreateView(LoginRequiredMixin, FormView):
         return reverse_lazy('blog:publications', args=[str(self.get_context_data()["view"].kwargs["pk"])])
 
 
-class CommentDeleteView(LoginRequiredMixin, FormView):
-    template_name = 'blog/confirm-delete.html'
-    form_class = EmptyForm
-
+class CommentManipulateMixin:
     def get_context_data(self, **kwargs):
         if self.cached_context is None:
             self.cached_context = super().get_context_data(**kwargs)
             res = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/comments/{self.cached_context["view"].kwargs["pk"]}/')
-            self.cached_context['object'] = res.json()
             self.cached_context['request_status'] = res.status_code
+            self.cached_context['object'] = res.json()
         return self.cached_context
 
     def render_to_response(self, context, **kwargs):
         if context['request_status'] != status.HTTP_200_OK:
             return HttpResponseBadRequest(context['object'])
         if context['object']['author_uid'] != context['user']['id']:
-            return HttpResponseUnauthorized('Can\'t delete comment of other user')
+            return HttpResponseUnauthorized('Can\'t manipulate comment of other user')
         return super().render_to_response(context, **kwargs)
+
+    def get_success_url(self):
+        return reverse_lazy('blog:publications', args=[self.get_context_data()["object"]["publication"]])
+
+
+class CommentUpdateView(CommentManipulateMixin, LoginRequiredMixin, FormView):
+    template_name = 'blog/create.html'
+    form_class = CommentForm
+
+    # This method is called when valid form data has been POSTed.
+    def form_valid(self, form: CommentForm) -> HttpResponse:
+        user = get_auth_user(self.request)
+        if not user['is_authenticated']:
+            form.add_error(None, 'Access token expired, please re-login')
+            return super().form_invalid(form)
+        res = requests.patch(f'{ServiceUrl.GATEWAY}/api/v1/comments/{self.get_context_data()["view"].kwargs["pk"]}/',
+                             json=create_json_from_form(form, ['body']))
+        if res.status_code != status.HTTP_200_OK:
+            add_error_in_form(form, res.json())
+            return super().form_invalid(form)
+        return super().form_valid(form)
+
+
+class CommentDeleteView(CommentManipulateMixin, LoginRequiredMixin, FormView):
+    template_name = 'blog/confirm-delete.html'
+    form_class = EmptyForm
 
     # This method is called when valid form data has been POSTed.
     def form_valid(self, form) -> HttpResponse:
@@ -225,9 +248,6 @@ class CommentDeleteView(LoginRequiredMixin, FormView):
             add_error_in_form(form, res.json())
             return super().form_invalid(form)
         return super().form_valid(form)
-
-    def get_success_url(self):
-        return reverse_lazy('blog:publications', args=[self.get_context_data()["object"]["publication"]])
 
 
 def paginated_request_get(request: HttpRequest, url) -> requests.Response:
@@ -297,10 +317,6 @@ def publication_update_view(request: HttpRequest, pk: uuid.UUID) -> HttpResponse
 
 
 def publication_delete_view(request: HttpRequest, pk: uuid.UUID) -> HttpResponse:
-    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
-
-
-def comment_update_view(request: HttpRequest, pk: uuid.UUID) -> HttpResponse:
     return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
 
 

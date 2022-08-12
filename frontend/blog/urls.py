@@ -24,7 +24,7 @@ urlpatterns = [
     # ex: /blog/publication/5/comment/
     path('publication/<uuid:pk>/comment/', CommentCreateView.as_view(), name='create_comment'),
     # ex: /blog/publication/5/update/
-    path('comment/<uuid:pk>/update/', comment_update_view, name='update_comment'),
+    path('comment/<uuid:pk>/update/', CommentUpdateView.as_view(), name='update_comment'),
     # ex: /blog/publication/5/delete/
     path('comment/<uuid:pk>/delete/', CommentDeleteView.as_view(), name='delete_comment'),
     # ex: /blog/tag/job/
