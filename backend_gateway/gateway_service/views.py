@@ -40,31 +40,31 @@ def redirect_post(request: Request, url: str) -> HttpResponse:
 class Users(APIView):
     @staticmethod
     def get(request: Request) -> HttpResponse:
-        return redirect_get(request, ServiceUrl.SESSION + '/api/v1/users/')
+        return redirect_get(request, f'{ServiceUrl.SESSION}/api/v1/users/')
 
     @staticmethod
     def post(request: Request) -> HttpResponse:
-        return redirect_post(request, ServiceUrl.SESSION + '/api/v1/users/')
+        return redirect_post(request, f'{ServiceUrl.SESSION}/api/v1/users/')
 
 
 @api_view(['POST'])
 def user_by_token(request: Request) -> HttpResponse:
-    return redirect_post(request, ServiceUrl.SESSION + '/api/v1/user-by-token/')
+    return redirect_post(request, f'{ServiceUrl.SESSION}/api/v1/user-by-token/')
 
 
 @api_view(['GET'])
 def tags(request: Request) -> HttpResponse:
-    return redirect_get(request, ServiceUrl.PUBLICATION + '/api/v1/tags/')
+    return redirect_get(request, f'{ServiceUrl.PUBLICATION}/api/v1/tags/')
 
 
 @api_view(['GET'])
 def votes(request: Request) -> HttpResponse:
-    return redirect_get(request, ServiceUrl.PUBLICATION + '/api/v1/votes/')
+    return redirect_get(request, f'{ServiceUrl.PUBLICATION}/api/v1/votes/')
 
 
 @api_view(['POST'])
 def vote(request: Request) -> HttpResponse:
-    return redirect_post(request, ServiceUrl.PUBLICATION + '/api/v1/vote/')
+    return redirect_post(request, f'{ServiceUrl.PUBLICATION}/api/v1/vote/')
 
 
 def replace_author(item):
@@ -83,7 +83,7 @@ def replace_authors(items):
 class Publications(APIView):
     @staticmethod
     def get(request: Request) -> HttpResponse:
-        res = raw_redirect_get_with_query(request, ServiceUrl.PUBLICATION + '/api/v1/publications/')
+        res = raw_redirect_get_with_query(request, f'{ServiceUrl.PUBLICATION}/api/v1/publications/')
         if res.status_code != status.HTTP_200_OK:
             return make_response(res)
         data = res.json()
@@ -120,6 +120,11 @@ def publication(request: Request, uid: uuid.UUID) -> HttpResponse:
     return HttpResponse(content=json.dumps(data), content_type='application/json')
 
 
-@api_view(['GET'])
-def comments(request: Request) -> HttpResponse:
-    return redirect_get(request, ServiceUrl.PUBLICATION + '/api/v1/comments/')
+class Comments(APIView):
+    @staticmethod
+    def get(request: Request) -> HttpResponse:
+        return redirect_get(request, f'{ServiceUrl.PUBLICATION}/api/v1/comments/')
+
+    @staticmethod
+    def post(request: Request) -> HttpResponse:
+        return redirect_post(request, f'{ServiceUrl.PUBLICATION}/api/v1/comments/')

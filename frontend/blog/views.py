@@ -43,7 +43,6 @@ class GuestRequiredMixin(ContextPassUserMixin):
         return super().render_to_response(context, **kwargs)
 
 
-
 def create_json_from_form(form, fields) -> dict:
     return {field: form.data[field] for field in fields}
 
@@ -67,6 +66,13 @@ def get_auth_user(request: HttpRequest) -> dict:
     return {'is_authenticated': True, **res.json()}
 
 
+def add_error_in_form(form, data):
+    if 'detail' in data:
+        form.add_error(None, data['detail'])
+    else:
+        form.add_error(None, data)
+
+
 class LoginView(GuestRequiredMixin, FormView):
     template_name = 'blog/login.html'
     form_class = LoginForm
@@ -76,11 +82,7 @@ class LoginView(GuestRequiredMixin, FormView):
     def form_valid(self, form: RegisterForm) -> HttpResponse:
         res = request_auth_tokens(form)
         if res.status_code != status.HTTP_200_OK:
-            data = res.json()
-            if 'detail' in data:
-                form.add_error(None, data['detail'])
-            else:
-                form.add_error(None, res.json())
+            add_error_in_form(form, res.json())
             return super().form_invalid(form)
         ret = super().form_valid(form)
         set_auth_tokens(ret, res.json())
@@ -98,7 +100,7 @@ class RegisterView(GuestRequiredMixin, FormView):
                             json=create_json_from_form(form,
                                                        ['username', 'password', 'first_name', 'last_name', 'email']))
         if res.status_code != status.HTTP_201_CREATED:
-            form.add_error(None, res.json())
+            add_error_in_form(form, res.json())
             return super().form_invalid(form)
         res = request_auth_tokens(form)
         if res.status_code != status.HTTP_200_OK:
@@ -122,12 +124,35 @@ class PublicationCreateView(LoginRequiredMixin, FormView):
         res = requests.post(f'{ServiceUrl.GATEWAY}/api/v1/publications/',
                             json=create_json_from_form(form, ['title', 'tags', 'body']) | {'author_uid': user['id']})
         if res.status_code != status.HTTP_201_CREATED:
-            form.add_error(None, res.json())
+            add_error_in_form(form, res.json())
             return super().form_invalid(form)
         return super().form_valid(form)
 
     def get_success_url(self):
         return f'/blog/user/{self.get_context_data()["user"]["username"]}/'
+
+
+class CommentCreateView(LoginRequiredMixin, FormView):
+    template_name = 'blog/create.html'
+    form_class = CommentForm
+
+    # This method is called when valid form data has been POSTed.
+    def form_valid(self, form: PublicationForm) -> HttpResponse:
+        user = get_auth_user(self.request)
+        if not user['is_authenticated']:
+            form.add_error(None, 'Access token expired, please re-login')
+            return super().form_invalid(form)
+        res = requests.post(f'{ServiceUrl.GATEWAY}/api/v1/comments/',
+                            json=create_json_from_form(form, ['body'])
+                                 | {'author_uid': user['id'],
+                                    'publication': str(self.get_context_data()['view'].kwargs['pk'])})
+        if res.status_code != status.HTTP_201_CREATED:
+            add_error_in_form(form, res.json())
+            return super().form_invalid(form)
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return f'/blog/publication/{self.get_context_data()["view"].kwargs["pk"]}/'
 
 
 def paginated_request_get(request: HttpRequest, url) -> requests.Response:
@@ -192,19 +217,11 @@ class VoteView(View):
         return HttpResponse(content=res.content, content_type="application/json")
 
 
-def publication_create_view(request: HttpRequest) -> HttpResponse:
-    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
-
-
 def publication_update_view(request: HttpRequest, pk: uuid.UUID) -> HttpResponse:
     return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
 
 
 def publication_delete_view(request: HttpRequest, pk: uuid.UUID) -> HttpResponse:
-    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
-
-
-def comment_create_view(request: HttpRequest) -> HttpResponse:
     return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
 
 
