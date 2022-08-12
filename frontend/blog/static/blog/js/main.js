@@ -35,7 +35,7 @@ const voteListener = event => {
 
 	const {type, id, action} = event.target.dataset;
 
-	postData(`/blog/${type}/${id}/${action}`, {'obj': id})
+	postData(`/blog/${type}/${id}/${action}/`, {'obj': id})
 		.then(json => {
 			document.querySelector(`[data-id="${id}"][data-count="rating"]`).innerHTML = json.rating;
 		});

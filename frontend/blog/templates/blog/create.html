@@ -15,6 +15,16 @@
 			</div>
 		{% endif %}
 
+		{% if form.tags %}
+			<div class="form-group">
+				{% if form.tags.errors %}
+					<label class="alert alert-danger">{{ form.tags.errors }}</label>
+				{% endif %}
+				<input type="text" placeholder="Tags (space-separated)" class="form-control" name="tags"
+				       value="{{ form.tags.value|default:"" }}">
+			</div>
+		{% endif %}
+
 		<div class="form-group">
 			{% if form.body.errors %}
 				<label class="alert alert-danger">{{ form.body.errors }}</label>

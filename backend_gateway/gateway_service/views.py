@@ -80,14 +80,27 @@ def replace_authors(items):
         replace_author(item)
 
 
-@api_view(['GET'])
-def publications(request: Request) -> HttpResponse:
-    res = raw_redirect_get_with_query(request, ServiceUrl.PUBLICATION + '/api/v1/publications/')
-    if res.status_code != status.HTTP_200_OK:
-        return make_response(res)
-    data = res.json()
-    replace_authors(data['items'])
-    return HttpResponse(content=json.dumps(data), content_type='application/json')
+class Publications(APIView):
+    @staticmethod
+    def get(request: Request) -> HttpResponse:
+        res = raw_redirect_get_with_query(request, ServiceUrl.PUBLICATION + '/api/v1/publications/')
+        if res.status_code != status.HTTP_200_OK:
+            return make_response(res)
+        data = res.json()
+        replace_authors(data['items'])
+        return HttpResponse(content=json.dumps(data), content_type='application/json')
+
+    @staticmethod
+    def post(request: Request) -> HttpResponse:
+        tags = request.data['tags'].split()
+        for tag in tags:
+            res = raw_request_get_no_query(f'{ServiceUrl.PUBLICATION}/api/v1/tags/{tag}/')
+            if res.status_code == status.HTTP_404_NOT_FOUND:
+                res = requests.post(f'{ServiceUrl.PUBLICATION}/api/v1/tags/', json={'name': tag})
+                if res.status_code != status.HTTP_201_CREATED:
+                    return make_response(res)
+        request.data['tags'] = tags
+        return redirect_post(request, f'{ServiceUrl.PUBLICATION}/api/v1/publications/')
 
 
 @api_view(['GET'])

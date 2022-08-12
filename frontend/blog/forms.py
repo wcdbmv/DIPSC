@@ -12,3 +12,13 @@ class RegisterForm(forms.Form):
     first_name = forms.CharField(max_length=150)
     last_name = forms.CharField(max_length=150)
     email = forms.EmailField(max_length=254)
+
+
+class PublicationForm(forms.Form):
+    title = forms.CharField(max_length=255)
+    tags = forms.CharField(max_length=127)
+    body = forms.TextInput()
+
+
+class CommentForm(forms.Form):
+    body = forms.TextInput()

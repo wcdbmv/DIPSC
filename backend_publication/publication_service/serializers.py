@@ -16,7 +16,8 @@ class VoteSerializer(serializers.ModelSerializer):
 
 
 class PublicationSerializer(serializers.ModelSerializer):
-    tags = serializers.SlugRelatedField(slug_field='name', many=True, read_only=True)
+    tags = serializers.SlugRelatedField(slug_field='name', many=True, queryset=Tag.objects.all())
+    author_uid = serializers.UUIDField()
 
     class Meta:
         model = Publication
@@ -24,6 +25,8 @@ class PublicationSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    author_uid = serializers.UUIDField()
+
     class Meta:
         model = Comment
         fields = serializers.ALL_FIELDS

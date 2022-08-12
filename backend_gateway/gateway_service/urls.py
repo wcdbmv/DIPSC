@@ -1,7 +1,7 @@
 from django.urls import path
 
 from .views import Users, user_by_token
-from .views import tags, votes, vote, publications, publication, comments
+from .views import tags, votes, vote, Publications, publication, comments
 
 
 urlpatterns = [
@@ -11,7 +11,7 @@ urlpatterns = [
     path(r'tags/', tags),
     path(r'votes/', votes),
     path(r'vote/', vote),
-    path(r'publications/', publications),
+    path(r'publications/', Publications.as_view()),
     path(r'publications/<uuid:uid>/', publication),
     path(r'comments/', comments),
 ]

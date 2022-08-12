@@ -2,17 +2,46 @@ import os
 import requests
 import uuid
 
-from django.http import HttpRequest, HttpResponse, HttpResponseNotFound
+from django.http import HttpRequest, HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.shortcuts import render
 from django.views.generic.edit import FormView, View
 from rest_framework import status
 
-from .forms import LoginForm, RegisterForm
+from .forms import LoginForm, RegisterForm, PublicationForm, CommentForm
 
 
 class ServiceUrl:
     GATEWAY = os.getenv('BACKEND_GATEWAY_URL', 'http://localhost:8081')
     SESSION = os.getenv('BACKEND_SESSION_URL', 'http://localhost:8082')
+
+
+class HttpResponseUnauthorized(HttpResponse):
+    status_code = status.HTTP_401_UNAUTHORIZED
+
+
+class ContextPassUserMixin:
+    cached_context = None
+
+    def get_context_data(self, **kwargs):
+        if self.cached_context is None:
+            self.cached_context = super().get_context_data(**kwargs)
+            self.cached_context['user'] = get_auth_user(self.request)
+        return self.cached_context
+
+
+class LoginRequiredMixin(ContextPassUserMixin):
+    def render_to_response(self, context, **kwargs):
+        if not context['user']['is_authenticated']:
+            return HttpResponseUnauthorized()
+        return super().render_to_response(context, **kwargs)
+
+
+class GuestRequiredMixin(ContextPassUserMixin):
+    def render_to_response(self, context, **kwargs):
+        if context['user']['is_authenticated']:
+            return HttpResponseBadRequest('You are already logged in')
+        return super().render_to_response(context, **kwargs)
+
 
 
 def create_json_from_form(form, fields) -> dict:
@@ -38,7 +67,7 @@ def get_auth_user(request: HttpRequest) -> dict:
     return {'is_authenticated': True, **res.json()}
 
 
-class LoginView(FormView):
+class LoginView(GuestRequiredMixin, FormView):
     template_name = 'blog/login.html'
     form_class = LoginForm
     success_url = '/blog/feed/'
@@ -47,14 +76,18 @@ class LoginView(FormView):
     def form_valid(self, form: RegisterForm) -> HttpResponse:
         res = request_auth_tokens(form)
         if res.status_code != status.HTTP_200_OK:
-            form.add_error(None, res.json())
+            data = res.json()
+            if 'detail' in data:
+                form.add_error(None, data['detail'])
+            else:
+                form.add_error(None, res.json())
             return super().form_invalid(form)
         ret = super().form_valid(form)
         set_auth_tokens(ret, res.json())
         return ret
 
 
-class RegisterView(FormView):
+class RegisterView(GuestRequiredMixin, FormView):
     template_name = 'blog/register.html'
     form_class = RegisterForm
     success_url = '/blog/feed/'
@@ -74,6 +107,27 @@ class RegisterView(FormView):
         ret = super().form_valid(form)
         set_auth_tokens(ret, res.json())
         return ret
+
+
+class PublicationCreateView(LoginRequiredMixin, FormView):
+    template_name = 'blog/create.html'
+    form_class = PublicationForm
+
+    # This method is called when valid form data has been POSTed.
+    def form_valid(self, form: PublicationForm) -> HttpResponse:
+        user = get_auth_user(self.request)
+        if not user['is_authenticated']:
+            form.add_error(None, 'Access token expired, please re-login')
+            return super().form_invalid(form)
+        res = requests.post(f'{ServiceUrl.GATEWAY}/api/v1/publications/',
+                            json=create_json_from_form(form, ['title', 'tags', 'body']) | {'author_uid': user['id']})
+        if res.status_code != status.HTTP_201_CREATED:
+            form.add_error(None, res.json())
+            return super().form_invalid(form)
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return f'/blog/user/{self.get_context_data()["user"]["username"]}/'
 
 
 def paginated_request_get(request: HttpRequest, url) -> requests.Response:
