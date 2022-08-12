@@ -111,21 +111,30 @@ class Publications(APIView):
         return redirect_post(request, f'{ServiceUrl.PUBLICATION}/api/v1/publications/')
 
 
-@api_view(['GET'])
-def publication(request: Request, uid: uuid.UUID) -> HttpResponse:
-    res = raw_redirect_get_with_query(request, f'{ServiceUrl.PUBLICATION}/api/v1/publications/{uid}/')
-    if res.status_code != status.HTTP_200_OK:
-        return make_response(res)
-    data = {'publication': res.json()}
-    replace_author(data['publication'])
+class Publication(APIView):
+    @staticmethod
+    def get(request: Request, uid: uuid.UUID) -> HttpResponse:
+        res = raw_redirect_get_with_query(request, f'{ServiceUrl.PUBLICATION}/api/v1/publications/{uid}/')
+        if res.status_code != status.HTTP_200_OK:
+            return make_response(res)
+        data = {'publication': res.json()}
+        replace_author(data['publication'])
 
-    res = raw_redirect_get_with_query(request, f'{ServiceUrl.PUBLICATION}/api/v1/comments/?publication={uid}')
-    if res.status_code != status.HTTP_200_OK:
-        return make_response(res)
-    data.update(res.json())
-    replace_authors(data['items'])
+        res = raw_redirect_get_with_query(request, f'{ServiceUrl.PUBLICATION}/api/v1/comments/?publication={uid}')
+        if res.status_code != status.HTTP_200_OK:
+            return make_response(res)
+        data.update(res.json())
+        replace_authors(data['items'])
 
-    return HttpResponse(content=json.dumps(data), content_type='application/json')
+        return HttpResponse(content=json.dumps(data), content_type='application/json')
+
+    @staticmethod
+    def put(request: Request, uid: uuid.UUID) -> HttpResponse:
+        return redirect_put(request, f'{ServiceUrl.PUBLICATION}/api/v1/publications/{uid}/')
+
+    @staticmethod
+    def delete(request: Request, uid: uuid.UUID) -> HttpResponse:
+        return redirect_delete(f'{ServiceUrl.PUBLICATION}/api/v1/publications/{uid}/')
 
 
 class Comments(APIView):

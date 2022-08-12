@@ -4,6 +4,7 @@ import uuid
 
 from django.http import HttpRequest, HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.shortcuts import render
+from django.urls import reverse_lazy
 from django.views.generic.edit import FormView, View
 from rest_framework import status
 
@@ -76,7 +77,7 @@ def add_error_in_form(form, data):
 class LoginView(GuestRequiredMixin, FormView):
     template_name = 'blog/login.html'
     form_class = LoginForm
-    success_url = '/blog/feed/'
+    success_url = reverse_lazy('blog:feed')
 
     # This method is called when valid form data has been POSTed.
     def form_valid(self, form: RegisterForm) -> HttpResponse:
@@ -92,7 +93,7 @@ class LoginView(GuestRequiredMixin, FormView):
 class RegisterView(GuestRequiredMixin, FormView):
     template_name = 'blog/register.html'
     form_class = RegisterForm
-    success_url = '/blog/feed/'
+    success_url = reverse_lazy('blog:feed')
 
     # This method is called when valid form data has been POSTed.
     def form_valid(self, form: RegisterForm) -> HttpResponse:
@@ -129,7 +130,46 @@ class PublicationCreateView(LoginRequiredMixin, FormView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return f'/blog/user/{self.get_context_data()["user"]["username"]}/'
+        return reverse_lazy('blog:user_publications', args=[self.get_context_data()["user"]["username"]])
+
+
+class PublicationDeleteView(LoginRequiredMixin, FormView):
+    template_name = 'blog/confirm-delete.html'
+    form_class = EmptyForm
+
+    def get_context_data(self, **kwargs):
+        if self.cached_context is None:
+            self.cached_context = super().get_context_data(**kwargs)
+            res = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/publications/{self.cached_context["view"].kwargs["pk"]}/')
+            self.cached_context['object'] = res.json()
+            if 'publication' in self.cached_context['object']:
+                self.cached_context['object'] = self.cached_context['object']['publication']
+            self.cached_context['request_status'] = res.status_code
+        return self.cached_context
+
+    def render_to_response(self, context, **kwargs):
+        if not context['user']['is_authenticated']:
+            return HttpResponseUnauthorized('Unauthorized')
+        if context['request_status'] != status.HTTP_200_OK:
+            return HttpResponseBadRequest(context['object'])
+        if context['object']['author']['id'] != context['user']['id']:
+            return HttpResponseUnauthorized('Can\'t delete publication of other user')
+        return super().render_to_response(context, **kwargs)
+
+    # This method is called when valid form data has been POSTed.
+    def form_valid(self, form) -> HttpResponse:
+        user = get_auth_user(self.request)
+        if not user['is_authenticated']:
+            form.add_error(None, 'Access token expired, please re-login')
+            return super().form_invalid(form)
+        res = requests.delete(f'{ServiceUrl.GATEWAY}/api/v1/publications/{self.get_context_data()["view"].kwargs["pk"]}/')
+        if res.status_code != status.HTTP_204_NO_CONTENT:
+            add_error_in_form(form, res.json())
+            return super().form_invalid(form)
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse_lazy('blog:feed')
 
 
 class CommentCreateView(LoginRequiredMixin, FormView):
@@ -152,7 +192,7 @@ class CommentCreateView(LoginRequiredMixin, FormView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return f'/blog/publication/{self.get_context_data()["view"].kwargs["pk"]}/'
+        return reverse_lazy('blog:publications', args=[str(self.get_context_data()["view"].kwargs["pk"])])
 
 
 class CommentDeleteView(LoginRequiredMixin, FormView):
@@ -187,7 +227,7 @@ class CommentDeleteView(LoginRequiredMixin, FormView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return f'/blog/publication/{self.get_context_data()["object"]["publication"]}/'
+        return reverse_lazy('blog:publications', args=[self.get_context_data()["object"]["publication"]])
 
 
 def paginated_request_get(request: HttpRequest, url) -> requests.Response:
