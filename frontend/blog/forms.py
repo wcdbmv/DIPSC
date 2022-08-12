@@ -22,3 +22,7 @@ class PublicationForm(forms.Form):
 
 class CommentForm(forms.Form):
     body = forms.TextInput()
+
+
+class EmptyForm(forms.Form):
+    pass

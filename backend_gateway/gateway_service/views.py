@@ -26,7 +26,7 @@ def raw_redirect_get_with_query(request: Request, url: str) -> requests.Response
 
 
 def make_response(res: requests.Response) -> HttpResponse:
-    return HttpResponse(content=res.content, status=res.status_code, content_type=res.headers['content-type'])
+    return HttpResponse(content=res.content, status=res.status_code, content_type=res.headers.get('content-type'))
 
 
 def redirect_get(request: Request, url: str) -> HttpResponse:
@@ -35,6 +35,14 @@ def redirect_get(request: Request, url: str) -> HttpResponse:
 
 def redirect_post(request: Request, url: str) -> HttpResponse:
     return make_response(requests.post(url, data=request.data))
+
+
+def redirect_put(request: Request, url: str) -> HttpResponse:
+    return make_response(requests.put(url, data=request.data))
+
+
+def redirect_delete(url: str) -> HttpResponse:
+    return make_response(requests.delete(url))
 
 
 class Users(APIView):
@@ -128,3 +136,17 @@ class Comments(APIView):
     @staticmethod
     def post(request: Request) -> HttpResponse:
         return redirect_post(request, f'{ServiceUrl.PUBLICATION}/api/v1/comments/')
+
+
+class Comment(APIView):
+    @staticmethod
+    def get(request: Request, uid: uuid.UUID) -> HttpResponse:
+        return redirect_get(request, f'{ServiceUrl.PUBLICATION}/api/v1/comments/{uid}/')
+
+    @staticmethod
+    def put(request: Request, uid: uuid.UUID) -> HttpResponse:
+        return redirect_put(request, f'{ServiceUrl.PUBLICATION}/api/v1/comments/{uid}/')
+
+    @staticmethod
+    def delete(request: Request, uid: uuid.UUID) -> HttpResponse:
+        return redirect_delete(f'{ServiceUrl.PUBLICATION}/api/v1/comments/{uid}/')
