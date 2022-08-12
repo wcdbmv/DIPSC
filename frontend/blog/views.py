@@ -2,6 +2,7 @@ import os
 import requests
 import uuid
 
+from django import forms
 from django.http import HttpRequest, HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.shortcuts import render
 from django.urls import reverse_lazy
@@ -14,34 +15,6 @@ from .forms import LoginForm, RegisterForm, PublicationForm, CommentForm, EmptyF
 class ServiceUrl:
     GATEWAY = os.getenv('BACKEND_GATEWAY_URL', 'http://localhost:8081')
     SESSION = os.getenv('BACKEND_SESSION_URL', 'http://localhost:8082')
-
-
-class HttpResponseUnauthorized(HttpResponse):
-    status_code = status.HTTP_401_UNAUTHORIZED
-
-
-class ContextPassUserMixin:
-    cached_context = None
-
-    def get_context_data(self, **kwargs):
-        if self.cached_context is None:
-            self.cached_context = super().get_context_data(**kwargs)
-            self.cached_context['user'] = get_auth_user(self.request)
-        return self.cached_context
-
-
-class LoginRequiredMixin(ContextPassUserMixin):
-    def render_to_response(self, context, **kwargs):
-        if not context['user']['is_authenticated']:
-            return HttpResponseUnauthorized()
-        return super().render_to_response(context, **kwargs)
-
-
-class GuestRequiredMixin(ContextPassUserMixin):
-    def render_to_response(self, context, **kwargs):
-        if context['user']['is_authenticated']:
-            return HttpResponseBadRequest('You are already logged in')
-        return super().render_to_response(context, **kwargs)
 
 
 def create_json_from_form(form, fields) -> dict:
@@ -67,212 +40,217 @@ def get_auth_user(request: HttpRequest) -> dict:
     return {'is_authenticated': True, **res.json()}
 
 
+class HttpResponseUnauthorized(HttpResponse):
+    status_code = status.HTTP_401_UNAUTHORIZED
+
+
+class ContextPassUserMixin:
+    cached_context = None
+
+    def get_context_data(self, **kwargs):
+        if self.cached_context is None:
+            self.cached_context = super().get_context_data(**kwargs)
+            self.cached_context['user'] = get_auth_user(self.request)
+        return self.cached_context
+
+
+class LoginRequiredMixin(ContextPassUserMixin):
+    is_authenticated = True
+    auth_error_response = HttpResponseUnauthorized()
+
+    def render_to_response(self, context, **kwargs):
+        if context['user']['is_authenticated'] != self.is_authenticated:
+            return self.auth_error_response
+        return super().render_to_response(context, **kwargs)
+
+
+class GuestRequiredMixin(LoginRequiredMixin):
+    is_authenticated = False
+    auth_error_response = HttpResponseBadRequest('You are already logged in')
+
+
 def add_error_in_form(form, data):
-    if 'detail' in data:
-        form.add_error(None, data['detail'])
-    else:
-        form.add_error(None, data)
+    form.add_error(None, data.get('detail', data))
 
 
-class LoginView(GuestRequiredMixin, FormView):
+class LoginFormTemplateView(GuestRequiredMixin, FormView):
+    success_url = reverse_lazy('blog:feed')
+
+    def form_valid(self, form: LoginForm) -> HttpResponse:
+        res = request_auth_tokens(form)
+        if res.status_code != status.HTTP_200_OK:
+            add_error_in_form(form, res.json())
+            return super().form_invalid(form)
+        ret = super().form_valid(form)
+        set_auth_tokens(ret, res.json())
+        return ret
+
+
+class LoginView(LoginFormTemplateView):
     template_name = 'blog/login.html'
     form_class = LoginForm
-    success_url = reverse_lazy('blog:feed')
-
-    # This method is called when valid form data has been POSTed.
-    def form_valid(self, form: RegisterForm) -> HttpResponse:
-        res = request_auth_tokens(form)
-        if res.status_code != status.HTTP_200_OK:
-            add_error_in_form(form, res.json())
-            return super().form_invalid(form)
-        ret = super().form_valid(form)
-        set_auth_tokens(ret, res.json())
-        return ret
 
 
-class RegisterView(GuestRequiredMixin, FormView):
-    template_name = 'blog/register.html'
-    form_class = RegisterForm
-    success_url = reverse_lazy('blog:feed')
-
-    # This method is called when valid form data has been POSTed.
-    def form_valid(self, form: RegisterForm) -> HttpResponse:
-        res = requests.post(ServiceUrl.GATEWAY + '/api/v1/users/',
-                            json=create_json_from_form(form,
-                                                       ['username', 'password', 'first_name', 'last_name', 'email']))
-        if res.status_code != status.HTTP_201_CREATED:
-            add_error_in_form(form, res.json())
-            return super().form_invalid(form)
-        res = request_auth_tokens(form)
-        if res.status_code != status.HTTP_200_OK:
-            print(res)
-            raise Exception(res.json())
-        ret = super().form_valid(form)
-        set_auth_tokens(ret, res.json())
-        return ret
-
-
-class PublicationCreateView(LoginRequiredMixin, FormView):
-    template_name = 'blog/create.html'
-    form_class = PublicationForm
-
-    # This method is called when valid form data has been POSTed.
-    def form_valid(self, form: PublicationForm) -> HttpResponse:
-        user = get_auth_user(self.request)
-        if not user['is_authenticated']:
-            form.add_error(None, 'Access token expired, please re-login')
-            return super().form_invalid(form)
-        res = requests.post(f'{ServiceUrl.GATEWAY}/api/v1/publications/',
-                            json=create_json_from_form(form, ['title', 'tags', 'body']) | {'author_uid': user['id']})
-        if res.status_code != status.HTTP_201_CREATED:
+class CheckStatusMixin:
+    def check_status(self, res: requests.Response, _status: int, form: forms.Form):
+        if res.status_code != _status:
             add_error_in_form(form, res.json())
             return super().form_invalid(form)
         return super().form_valid(form)
+
+
+class RegisterView(CheckStatusMixin, LoginFormTemplateView):
+    template_name = 'blog/register.html'
+    form_class = RegisterForm
+
+    def form_valid(self, form: RegisterForm) -> HttpResponse:
+        data = create_json_from_form(form, ['username', 'password', 'first_name', 'last_name', 'email'])
+        res = requests.post(ServiceUrl.GATEWAY + '/api/v1/users/', json=data)
+        return self.check_status(res, status.HTTP_201_CREATED, form)  # call LoginFormTemplateView.form_valid
+
+
+def get_auth_user_or_add_form_error(request: HttpRequest, form: forms.Form):
+    user = get_auth_user(request)
+    if not user['is_authenticated']:
+        form.add_error(None, 'Access token expired, please re-login')
+        return None
+    return user
+
+
+class PublicationCreateView(CheckStatusMixin, LoginRequiredMixin, FormView):
+    template_name = 'blog/create.html'
+    form_class = PublicationForm
+
+    def form_valid(self, form: PublicationForm) -> HttpResponse:
+        if not (user := get_auth_user_or_add_form_error(self.request, form)):
+            return super().form_invalid(form)
+
+        data = create_json_from_form(form, ['title', 'tags', 'body']) | {'author_uid': user['id']}
+        res = requests.post(f'{ServiceUrl.GATEWAY}/api/v1/publications/', json=data)
+        return self.check_status(res, status.HTTP_201_CREATED, form)
 
     def get_success_url(self):
         return reverse_lazy('blog:user_publications', args=[self.get_context_data()["user"]["username"]])
 
 
-class PublicationManipulateMixin:
+class ManipulateMixinBase(CheckStatusMixin, LoginRequiredMixin):
+    obj = None
+
+    def insert_object_in_context(self, data):
+        self.cached_context['object'] = data
+
     def get_context_data(self, **kwargs):
         if self.cached_context is None:
             self.cached_context = super().get_context_data(**kwargs)
-            res = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/publications/{self.cached_context["view"].kwargs["pk"]}/')
+            res = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/{self.obj}s/{self.cached_context["view"].kwargs["pk"]}/')
             self.cached_context['request_status'] = res.status_code
-            self.cached_context['object'] = res.json()
-            if 'publication' in self.cached_context['object']:
-                self.cached_context['object'] = self.cached_context['object']['publication']
+            self.insert_object_in_context(res.json())
         return self.cached_context
+
+    def get_author_uid(self, context):
+        return context['object']['author_uid']
 
     def render_to_response(self, context, **kwargs):
         if not context['user']['is_authenticated']:
-            return HttpResponseUnauthorized('Unauthorized')
+            return HttpResponseUnauthorized('Access token expired, please re-login')
         if context['request_status'] != status.HTTP_200_OK:
             return HttpResponseBadRequest(context['object'])
-        if context['object']['author']['id'] != context['user']['id']:
-            return HttpResponseUnauthorized('Can\'t manipulate publication of other user')
-        context['form'].data['title'] = context['object']['title']
-        context['form'].data['tags'] = ' '.join(context['object']['tags'])
-        context['form'].data['body'] = context['object']['body']
+        if self.get_author_uid(context) != context['user']['id']:
+            return HttpResponseUnauthorized(f'Can\'t manipulate {self.obj} of other user')
         return super().render_to_response(context, **kwargs)
 
 
-class PublicationUpdateView(PublicationManipulateMixin, LoginRequiredMixin, FormView):
+class PublicationManipulateMixin(ManipulateMixinBase):
+    obj = 'publication'
+
+    def insert_object_in_context(self, data):
+        self.cached_context['object'] = data
+        if 'publication' in self.cached_context['object']:
+            self.cached_context['object'] = self.cached_context['object']['publication']
+
+    def get_author_uid(self, context):
+        return context['object']['author']['id']
+
+
+class PublicationUpdateView(PublicationManipulateMixin, FormView):
     template_name = 'blog/create.html'
     form_class = PublicationForm
 
-    # This method is called when valid form data has been POSTed.
     def form_valid(self, form: PublicationForm) -> HttpResponse:
-        user = get_auth_user(self.request)
-        if not user['is_authenticated']:
-            form.add_error(None, 'Access token expired, please re-login')
+        if not get_auth_user_or_add_form_error(self.request, form):
             return super().form_invalid(form)
-        res = requests.patch(f'{ServiceUrl.GATEWAY}/api/v1/publications/{self.get_context_data()["view"].kwargs["pk"]}/',
-                             json=create_json_from_form(form, ['title', 'tags', 'body']))
-        if res.status_code != status.HTTP_200_OK:
-            add_error_in_form(form, res.json())
-            return super().form_invalid(form)
-        return super().form_valid(form)
+
+        url = f'{ServiceUrl.GATEWAY}/api/v1/publications/{self.get_context_data()["view"].kwargs["pk"]}/'
+        res = requests.patch(url, json=create_json_from_form(form, ['title', 'tags', 'body']))
+        return self.check_status(res, status.HTTP_200_OK, form)
 
     def get_success_url(self):
         return reverse_lazy('blog:publications', args=[self.cached_context["view"].kwargs["pk"]])
 
 
-class PublicationDeleteView(PublicationManipulateMixin, LoginRequiredMixin, FormView):
+class PublicationDeleteView(PublicationManipulateMixin, FormView):
     template_name = 'blog/confirm-delete.html'
     form_class = EmptyForm
     success_url = reverse_lazy('blog:feed')
 
-    # This method is called when valid form data has been POSTed.
     def form_valid(self, form) -> HttpResponse:
-        user = get_auth_user(self.request)
-        if not user['is_authenticated']:
-            form.add_error(None, 'Access token expired, please re-login')
+        if not get_auth_user_or_add_form_error(self.request, form):
             return super().form_invalid(form)
-        res = requests.delete(f'{ServiceUrl.GATEWAY}/api/v1/publications/{self.get_context_data()["view"].kwargs["pk"]}/')
-        if res.status_code != status.HTTP_204_NO_CONTENT:
-            add_error_in_form(form, res.json())
-            return super().form_invalid(form)
-        return super().form_valid(form)
+
+        url = f'{ServiceUrl.GATEWAY}/api/v1/publications/{self.get_context_data()["view"].kwargs["pk"]}/'
+        res = requests.delete(url)
+        return self.check_status(res, status.HTTP_204_NO_CONTENT, form)
 
 
-class CommentCreateView(LoginRequiredMixin, FormView):
+class CommentCreateView(CheckStatusMixin, LoginRequiredMixin, FormView):
     template_name = 'blog/create.html'
     form_class = CommentForm
 
-    # This method is called when valid form data has been POSTed.
     def form_valid(self, form: CommentForm) -> HttpResponse:
-        user = get_auth_user(self.request)
-        if not user['is_authenticated']:
-            form.add_error(None, 'Access token expired, please re-login')
+        if not (user := get_auth_user_or_add_form_error(self.request, form)):
             return super().form_invalid(form)
-        res = requests.post(f'{ServiceUrl.GATEWAY}/api/v1/comments/',
-                            json=create_json_from_form(form, ['body'])
-                                 | {'author_uid': user['id'],
-                                    'publication': str(self.get_context_data()['view'].kwargs['pk'])})
-        if res.status_code != status.HTTP_201_CREATED:
-            add_error_in_form(form, res.json())
-            return super().form_invalid(form)
-        return super().form_valid(form)
+
+        data = create_json_from_form(form, ['body']) | {
+            'author_uid': user['id'],
+            'publication': str(self.get_context_data()['view'].kwargs['pk'])
+        }
+        res = requests.post(f'{ServiceUrl.GATEWAY}/api/v1/comments/', json=data)
+        return self.check_status(res, status.HTTP_201_CREATED, form)
 
     def get_success_url(self):
         return reverse_lazy('blog:publications', args=[str(self.get_context_data()["view"].kwargs["pk"])])
 
 
-class CommentManipulateMixin:
-    def get_context_data(self, **kwargs):
-        if self.cached_context is None:
-            self.cached_context = super().get_context_data(**kwargs)
-            res = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/comments/{self.cached_context["view"].kwargs["pk"]}/')
-            self.cached_context['request_status'] = res.status_code
-            self.cached_context['object'] = res.json()
-        return self.cached_context
-
-    def render_to_response(self, context, **kwargs):
-        if context['request_status'] != status.HTTP_200_OK:
-            return HttpResponseBadRequest(context['object'])
-        if context['object']['author_uid'] != context['user']['id']:
-            return HttpResponseUnauthorized('Can\'t manipulate comment of other user')
-        context['form'].data['body'] = context['object']['body']
-        return super().render_to_response(context, **kwargs)
+class CommentManipulateMixin(ManipulateMixinBase):
+    obj = 'comment'
 
     def get_success_url(self):
-        return reverse_lazy('blog:publications', args=[self.get_context_data()["object"]["publication"]])
+        return reverse_lazy('blog:publications', args=[self.get_context_data()['object']['publication']])
 
 
-class CommentUpdateView(CommentManipulateMixin, LoginRequiredMixin, FormView):
+class CommentUpdateView(CommentManipulateMixin, FormView):
     template_name = 'blog/create.html'
     form_class = CommentForm
 
-    # This method is called when valid form data has been POSTed.
     def form_valid(self, form: CommentForm) -> HttpResponse:
-        user = get_auth_user(self.request)
-        if not user['is_authenticated']:
-            form.add_error(None, 'Access token expired, please re-login')
+        if not get_auth_user_or_add_form_error(self.request, form):
             return super().form_invalid(form)
-        res = requests.patch(f'{ServiceUrl.GATEWAY}/api/v1/comments/{self.get_context_data()["view"].kwargs["pk"]}/',
-                             json=create_json_from_form(form, ['body']))
-        if res.status_code != status.HTTP_200_OK:
-            add_error_in_form(form, res.json())
-            return super().form_invalid(form)
-        return super().form_valid(form)
+
+        url = f'{ServiceUrl.GATEWAY}/api/v1/comments/{self.get_context_data()["view"].kwargs["pk"]}/'
+        res = requests.patch(url, json=create_json_from_form(form, ['body']))
+        return self.check_status(res, status.HTTP_200_OK, form)
 
 
-class CommentDeleteView(CommentManipulateMixin, LoginRequiredMixin, FormView):
+class CommentDeleteView(CommentManipulateMixin, FormView):
     template_name = 'blog/confirm-delete.html'
     form_class = EmptyForm
 
-    # This method is called when valid form data has been POSTed.
     def form_valid(self, form) -> HttpResponse:
-        user = get_auth_user(self.request)
-        if not user['is_authenticated']:
-            form.add_error(None, 'Access token expired, please re-login')
+        if not get_auth_user_or_add_form_error(self.request, form):
             return super().form_invalid(form)
+
         res = requests.delete(f'{ServiceUrl.GATEWAY}/api/v1/comments/{self.get_context_data()["view"].kwargs["pk"]}/')
-        if res.status_code != status.HTTP_204_NO_CONTENT:
-            add_error_in_form(form, res.json())
-            return super().form_invalid(form)
-        return super().form_valid(form)
+        return self.check_status(res, status.HTTP_204_NO_CONTENT, form)
 
 
 def paginated_request_get(request: HttpRequest, url) -> requests.Response:
@@ -299,7 +277,7 @@ def blog_view(request: HttpRequest, username: str) -> HttpResponse:
     res = paginated_request_get(request, f'{ServiceUrl.GATEWAY}/api/v1/publications/?author_uid={user["id"]}')
     if res.status_code != status.HTTP_200_OK:
         print(res)
-        raise res
+        raise Exception(res.json())
     return render(request, 'blog/publication-list.html', {
         'user': get_auth_user(request),
         'first_name': user['first_name'],
@@ -314,7 +292,7 @@ def publication_view(request: HttpRequest, pk: uuid.UUID) -> HttpResponse:
         if res.status_code == status.HTTP_404_NOT_FOUND:
             return HttpResponseNotFound(f'Publication with uuid {pk} not found')
         print(res)
-        raise res
+        raise Exception(res.json())
     return render(request, 'blog/publication.html', {'user': get_auth_user(request), 'response': res.json()})
 
 
@@ -335,14 +313,6 @@ class VoteView(View):
             raise Exception(res.json())
 
         return HttpResponse(content=res.content, content_type="application/json")
-
-
-def publication_update_view(request: HttpRequest, pk: uuid.UUID) -> HttpResponse:
-    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
-
-
-def publication_delete_view(request: HttpRequest, pk: uuid.UUID) -> HttpResponse:
-    return render(request, 'blog/publication-list.html', {'user': get_auth_user(request)})
 
 
 def tag_view(request: HttpRequest, tag: str) -> HttpResponse:
