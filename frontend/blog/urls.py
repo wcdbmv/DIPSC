@@ -18,7 +18,7 @@ urlpatterns = [
     # ex: /blog/publication/create/
     path('publication/create/', PublicationCreateView.as_view(), name='create_publication'),
     # ex: /blog/publication/5/update/
-    path('publication/create/<uuid:pk>/update/', publication_update_view, name='update_publication'),
+    path('publication/create/<uuid:pk>/update/', PublicationUpdateView.as_view(), name='update_publication'),
     # ex: /blog/publication/5/delete/
     path('publication/<uuid:pk>/delete/', PublicationDeleteView.as_view(), name='delete_publication'),
     # ex: /blog/publication/5/comment/

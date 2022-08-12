@@ -88,6 +88,17 @@ def replace_authors(items):
         replace_author(item)
 
 
+def replace_tags(request: Request):
+    tags = request.data['tags'].split()
+    for tag in tags:
+        res = raw_request_get_no_query(f'{ServiceUrl.PUBLICATION}/api/v1/tags/{tag}/')
+        if res.status_code == status.HTTP_404_NOT_FOUND:
+            res = requests.post(f'{ServiceUrl.PUBLICATION}/api/v1/tags/', json={'name': tag})
+            if res.status_code != status.HTTP_201_CREATED:
+                return make_response(res)
+    request.data['tags'] = tags
+
+
 class Publications(APIView):
     @staticmethod
     def get(request: Request) -> HttpResponse:
@@ -100,14 +111,7 @@ class Publications(APIView):
 
     @staticmethod
     def post(request: Request) -> HttpResponse:
-        tags = request.data['tags'].split()
-        for tag in tags:
-            res = raw_request_get_no_query(f'{ServiceUrl.PUBLICATION}/api/v1/tags/{tag}/')
-            if res.status_code == status.HTTP_404_NOT_FOUND:
-                res = requests.post(f'{ServiceUrl.PUBLICATION}/api/v1/tags/', json={'name': tag})
-                if res.status_code != status.HTTP_201_CREATED:
-                    return make_response(res)
-        request.data['tags'] = tags
+        replace_tags(request)
         return redirect_post(request, f'{ServiceUrl.PUBLICATION}/api/v1/publications/')
 
 
@@ -130,6 +134,8 @@ class Publication(APIView):
 
     @staticmethod
     def patch(request: Request, uid: uuid.UUID) -> HttpResponse:
+        if 'tags' in request.data:
+            replace_tags(request)
         return redirect_patch(request, f'{ServiceUrl.PUBLICATION}/api/v1/publications/{uid}/')
 
     @staticmethod

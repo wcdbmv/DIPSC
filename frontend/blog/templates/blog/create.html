@@ -11,7 +11,7 @@
 					<label class="alert alert-danger">{{ form.title.errors }}</label>
 				{% endif %}
 				<input type="text" placeholder="Title" class="form-control" name="title"
-				       value="{{ form.title.value|default:"" }}" required>
+				       value="{{ form.data.title|default:"" }}" required>
 			</div>
 		{% endif %}
 
@@ -21,7 +21,7 @@
 					<label class="alert alert-danger">{{ form.tags.errors }}</label>
 				{% endif %}
 				<input type="text" placeholder="Tags (space-separated)" class="form-control" name="tags"
-				       value="{{ form.tags.value|default:"" }}">
+				       value="{{ form.data.tags|default:"" }}">
 			</div>
 		{% endif %}
 
@@ -30,7 +30,7 @@
 				<label class="alert alert-danger">{{ form.body.errors }}</label>
 			{% endif %}
 			<textarea placeholder="Body" class="form-control" name="body" rows="10"
-			          required>{{ form.body.value|default:"" }}</textarea>
+			          required>{{ form.data.body|default:"" }}</textarea>
 		</div>
 
 		<div class="form-group">
