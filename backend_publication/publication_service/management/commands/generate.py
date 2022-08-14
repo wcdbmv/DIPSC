@@ -11,7 +11,7 @@ from publication_service.models import Tag, Vote, Publication, Comment
 
 
 class ServiceUrl:
-    SESSION = os.getenv('BACKEND_SESSION_URL', 'http://localhost:8082')
+    SESSION = os.getenv('BLOG_BACKEND_SESSION_URL', 'http://localhost:8082')
 
 
 fake = Faker()

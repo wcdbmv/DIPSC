@@ -13,8 +13,8 @@ from .forms import LoginForm, RegisterForm, PublicationForm, CommentForm, EmptyF
 
 
 class ServiceUrl:
-    GATEWAY = os.getenv('BACKEND_GATEWAY_URL', 'http://localhost:8081')
-    SESSION = os.getenv('BACKEND_SESSION_URL', 'http://localhost:8082')
+    GATEWAY = os.getenv('BLOG_BACKEND_GATEWAY_URL', 'http://localhost:8081')
+    SESSION = os.getenv('BLOG_BACKEND_SESSION_URL', 'http://localhost:8082')
 
 
 def create_json_from_form(form, fields) -> dict:

@@ -12,10 +12,10 @@ from rest_framework.views import APIView
 
 
 class ServiceUrl:
-    SESSION = os.getenv('BACKEND_SESSION', 'http://127.0.0.1:8082')
-    PUBLICATION = os.getenv('BACKEND_PUBLICATION', 'http://127.0.0.1:8083')
-    SUBSCRIPTION = os.getenv('BACKEND_SUBSCRIPTION', 'http://127.0.0.1:8084')
-    STATISTICS = os.getenv('BACKEND_STATISTICS', 'http://127.0.0.1:8085')
+    SESSION = os.getenv('BLOG_BACKEND_SESSION_URL', 'http://127.0.0.1:8082')
+    PUBLICATION = os.getenv('BLOG_BACKEND_PUBLICATION_URL', 'http://127.0.0.1:8083')
+    SUBSCRIPTION = os.getenv('BLOG_BACKEND_SUBSCRIPTION_URL', 'http://127.0.0.1:8084')
+    STATISTICS = os.getenv('BLOG_BACKEND_STATISTICS_URL', 'http://127.0.0.1:8085')
 
 
 def raw_request_get_no_query(url: str) -> requests.Response:
