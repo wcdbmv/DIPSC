@@ -18,8 +18,9 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('subscription_uid', models.UUIDField(default=uuid.uuid4, editable=False)),
                 ('type', models.CharField(choices=[('user', 'user'), ('tag', 'tag')], max_length=4)),
-                ('follower_uid', models.UUIDField(default=uuid.uuid4, editable=False)),
-                ('following_uid', models.UUIDField(default=uuid.uuid4, editable=False)),
+                ('follower_uid', models.UUIDField(editable=False)),
+                ('following_uid', models.UUIDField(editable=False)),
+                ('sub_date', models.DateTimeField(auto_now_add=True, verbose_name='date subscribed')),
             ],
         ),
     ]
