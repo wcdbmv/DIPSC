@@ -4,7 +4,7 @@ import uuid
 
 from django import forms
 from django.http import HttpRequest, HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views.generic.edit import FormView, View
 from rest_framework import status
@@ -107,6 +107,12 @@ class RegisterView(CheckStatusMixin, LoginFormTemplateView):
         data = create_json_from_form(form, ['username', 'password', 'first_name', 'last_name', 'email'])
         res = requests.post(ServiceUrl.GATEWAY + '/api/v1/users/', json=data)
         return self.check_status(res, status.HTTP_201_CREATED, form)  # call LoginFormTemplateView.form_valid
+
+
+def logout_view(request: HttpRequest) -> HttpResponse:
+    ret = redirect('blog:feed')
+    set_auth_tokens(ret, {'access': None, 'refresh': None})
+    return ret
 
 
 def get_auth_user_or_add_form_error(request: HttpRequest, form: forms.Form):
