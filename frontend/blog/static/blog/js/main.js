@@ -45,3 +45,12 @@ const voteListener = event => {
 	document.querySelectorAll(`[data-action="${action}"]`)
 		.forEach(element => element.addEventListener('click', voteListener));
 });
+
+document.getElementById('search').addEventListener('click', event => {
+	event.preventDefault();
+
+	const input = document.getElementById('search-input').value;
+	const queryParams = new URLSearchParams(window.location.search);
+	queryParams.set("search", input);
+	location.href = `?${queryParams.toString()}`
+});

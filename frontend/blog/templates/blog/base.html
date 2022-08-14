@@ -57,19 +57,19 @@
 						by</a>
 					<div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
 						<a class="dropdown-item"
-						   href="?{% url_replace 'order_by' '-pub_date' %}">-pub_date</a>
+						   href="?{% url_replace 'ordering' '-pub_date' %}">-pub_date</a>
 						<a class="dropdown-item"
-						   href="?{% url_replace 'order_by' 'pub_date' %}">pub_date</a>
-						<a class="dropdown-item" href="?{% url_replace 'order_by' '-rating' %}">-rating</a>
-						<a class="dropdown-item" href="?{% url_replace 'order_by' 'rating' %}">rating</a>
+						   href="?{% url_replace 'ordering' 'pub_date' %}">pub_date</a>
+						<a class="dropdown-item" href="?{% url_replace 'ordering' '-rating' %}">-rating</a>
+						<a class="dropdown-item" href="?{% url_replace 'ordering' 'rating' %}">rating</a>
 					</div>
 				</li>
 			</ul>
-			<form class="form-inline my-2 my-lg-0" method="get"
-				{# action="{% url 'blog:search_articles' %}" #}>
+			<form class="form-inline my-2 my-lg-0" method="get">
 				<input class="form-control mr-sm-2" type="search" placeholder="Search"
-				       aria-label="Search">
-				<button class="btn btn-outline-light my-2 my-sm-0" type="submit">Search</button>
+				       aria-label="Search" id="search-input"
+				       {% if 'search' in request.GET %}value="{{ request.GET.search }}"{% endif %}>
+				<button class="btn btn-outline-light my-2 my-sm-0" type="submit" id="search">Search</button>
 			</form>
 		</div>
 	</div>

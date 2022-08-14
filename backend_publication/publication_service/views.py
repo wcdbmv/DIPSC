@@ -4,7 +4,8 @@ import django_filters.rest_framework
 
 from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponse
-from rest_framework import status, viewsets
+from rest_framework import filters, status, viewsets
+
 from rest_framework.decorators import api_view
 from rest_framework.request import Request
 
@@ -32,16 +33,19 @@ class PublicationViewSet(viewsets.ModelViewSet):
     queryset = Publication.objects.all()
     serializer_class = PublicationSerializer
     pagination_class = Pagination
-    filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_fields = ['author_uid', 'tags__name']
+    ordering_fields = ['pub_date', 'rating']
+    search_fields = ['title', 'body']
 
 
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     pagination_class = Pagination
-    filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['publication']
+    ordering_fields = ['pub_date', 'rating']
 
 
 @api_view(['GET'])
