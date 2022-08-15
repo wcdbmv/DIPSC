@@ -48,9 +48,19 @@ users = api_view_redirect(['GET', 'POST'], f'{ServiceUrl.SESSION}/api/v1/users/'
 user_by_token = api_view_redirect(['POST'], f'{ServiceUrl.SESSION}/api/v1/user-by-token/')
 
 
+@api_view(['GET'])
+def user(request: Request, uid: uuid.UUID) -> HttpResponse:
+    return redirect(request, f'{ServiceUrl.SESSION}/api/v1/users/{uid}/')
+
+
 # Subscription Service
 
 subscriptions = api_view_redirect(['GET', 'POST'], f'{ServiceUrl.SUBSCRIPTION}/api/v1/subscriptions/')
+
+
+@api_view(['GET', 'DELETE'])
+def subscription(request: Request, uid: uuid.UUID) -> HttpResponse:
+    return redirect(request, f'{ServiceUrl.SUBSCRIPTION}/api/v1/subscriptions/{uid}/')
 
 
 # Publication Service

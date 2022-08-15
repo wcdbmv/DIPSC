@@ -275,6 +275,22 @@ def publications_view(request: HttpRequest) -> HttpResponse:
     return render(request, 'blog/publication-list.html', {'user': get_auth_user(request), 'response': res.json()})
 
 
+def check_subscribed(follower_uid, following_uid, return_subscription_uid=False):
+    res = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/subscriptions/', {
+        'follower_uid': follower_uid,
+        'following_uid': following_uid,
+    })
+
+    subscribed = None
+    if res.status_code == status.HTTP_200_OK:
+        data = res.json()
+        subscribed = len(data) > 0
+        if subscribed and return_subscription_uid:
+            subscribed = data[0]['subscription_uid']
+
+    return subscribed
+
+
 def blog_view(request: HttpRequest, username: str) -> HttpResponse:
     res = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/users/?username={username}')
     if res.status_code != status.HTTP_200_OK:
@@ -284,15 +300,24 @@ def blog_view(request: HttpRequest, username: str) -> HttpResponse:
     if len(data) == 0:
         return HttpResponseNotFound(f'User with username "{username}" not found')
     user = data[0]
+
+    auth_user = get_auth_user(request)
+
+    subscribed = None
+    if auth_user['is_authenticated']:
+        subscribed = check_subscribed(auth_user['id'], user['id'])
+
     res = paginated_request_get(request, f'{ServiceUrl.GATEWAY}/api/v1/publications/?author_uid={user["id"]}')
     if res.status_code != status.HTTP_200_OK:
         print(res)
         raise Exception(res.json())
     return render(request, 'blog/publication-list.html', {
-        'user': get_auth_user(request),
+        'user': auth_user,
+        'author_uid': user['id'],
         'first_name': user['first_name'],
         'last_name': user['last_name'],
         'response': res.json(),
+        'subscribed': subscribed,
     })
 
 
@@ -366,5 +391,42 @@ def feed_view(request: HttpRequest) -> HttpResponse:
     return render(request, 'blog/publication-list.html', {'user': user, 'response': res.json()})
 
 
-# TODO: create 'Subscribe' and 'Unsubscribe' buttons
+def subscribe_author(request: HttpRequest, pk: uuid.UUID) -> HttpResponse:
+    user = get_auth_user(request)
+    if not user['is_authenticated']:
+        return HttpResponseUnauthorized()
+
+    subscribed = check_subscribed(user['id'], str(pk))
+    if subscribed:
+        return HttpResponseBadRequest('Already subscribed')
+
+    res = requests.post(f'{ServiceUrl.GATEWAY}/api/v1/subscriptions/', json={
+        'follower_uid': user['id'],
+        'following_uid': str(pk),
+        'type': 'user'
+    })
+    if res.status_code != status.HTTP_201_CREATED:
+        return HttpResponseBadRequest(res.json())
+
+    username = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/users/{pk}/').json()['username']
+    return redirect('blog:user_publications', username)
+
+
+def unsubscribe_author(request: HttpRequest, pk: uuid.UUID) -> HttpResponse:
+    user = get_auth_user(request)
+    if not user['is_authenticated']:
+        return HttpResponseUnauthorized()
+
+    subscribed = check_subscribed(user['id'], str(pk), True)
+    if not subscribed:
+        return HttpResponseBadRequest('Already unsubscribed')
+
+    res = requests.delete(f'{ServiceUrl.GATEWAY}/api/v1/subscriptions/{subscribed}/')
+    if res.status_code != status.HTTP_204_NO_CONTENT:
+        return HttpResponseBadRequest(res.json())
+
+    username = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/users/{pk}/').json()['username']
+    return redirect('blog:user_publications', username)
+
+
 # TODO: create Subscription page

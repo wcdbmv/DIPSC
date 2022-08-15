@@ -10,15 +10,15 @@
 		</p>
 		<p>{{ response.publication.body }}</p>
 		{% if response.publication.tags %}
-				<hr class="my-4">
-				<span class="tags">
-					Tags:
-					{% for tag in response.publication.tags %}
-						<a href="{% url 'blog:tag' tag %}">{{ tag }}</a>
-					{% endfor %}
-				</span>
-				<hr class="my-4">
-			{% endif %}
+			<hr class="my-4">
+			<span class="tags">
+				Tags:
+				{% for tag in response.publication.tags %}
+					<a href="{% url 'blog:tag' tag %}">{{ tag }}</a>
+				{% endfor %}
+			</span>
+			<hr class="my-4">
+		{% endif %}
 		{% if response.publication.author.username == user.username %}
 			<div class="row">
 				<a href="{% url 'blog:delete_publication' response.publication.id %}" class="col-md-2 pull-right">

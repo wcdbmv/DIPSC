@@ -6,6 +6,26 @@
 	{% if first_name or last_name %}
 		<div class="jumbotron">
 			<h1 class="display-4">{{ first_name }} {{ last_name }} — Blog</h1>
+			{% if subscribed is not None %}
+				<hr class="my-4">
+				<div class="row">
+					{% if subscribed %}
+						<a href="{% url 'blog:unsubscribe_author' author_uid %}"
+						   class="col-md-2 pull-right">
+							<button type="button" class="btn btn-primary btn-block">
+								Unsubscribe
+							</button>
+						</a>
+					{% else %}
+						<a href="{% url 'blog:subscribe_author' author_uid %}"
+						   class="col-md-2 pull-right">
+							<button type="button" class="btn btn-primary btn-block">
+								Subscribe
+							</button>
+						</a>
+					{% endif %}
+				</div>
+			{% endif %}
 		</div>
 	{% elif tag %}
 		<div class="jumbotron">
