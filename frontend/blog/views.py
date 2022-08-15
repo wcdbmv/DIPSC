@@ -74,7 +74,7 @@ def add_error_in_form(form, data):
 
 
 class LoginFormTemplateView(GuestRequiredMixin, FormView):
-    success_url = reverse_lazy('blog:feed')
+    success_url = reverse_lazy('blog:publications')
 
     def form_valid(self, form: LoginForm) -> HttpResponse:
         res = request_auth_tokens(form)
@@ -110,7 +110,7 @@ class RegisterView(CheckStatusMixin, LoginFormTemplateView):
 
 
 def logout_view(request: HttpRequest) -> HttpResponse:
-    ret = redirect('blog:feed')
+    ret = redirect('blog:publications')
     set_auth_tokens(ret, {'access': None, 'refresh': None})
     return ret
 
@@ -191,13 +191,13 @@ class PublicationUpdateView(PublicationManipulateMixin, FormView):
         return self.check_status(res, status.HTTP_200_OK, form)
 
     def get_success_url(self):
-        return reverse_lazy('blog:publications', args=[self.cached_context["view"].kwargs["pk"]])
+        return reverse_lazy('blog:publication', args=[self.cached_context["view"].kwargs["pk"]])
 
 
 class PublicationDeleteView(PublicationManipulateMixin, FormView):
     template_name = 'blog/confirm-delete.html'
     form_class = EmptyForm
-    success_url = reverse_lazy('blog:feed')
+    success_url = reverse_lazy('blog:publications')
 
     def form_valid(self, form) -> HttpResponse:
         if not get_auth_user_or_add_form_error(self.request, form):
@@ -224,14 +224,14 @@ class CommentCreateView(CheckStatusMixin, LoginRequiredMixin, FormView):
         return self.check_status(res, status.HTTP_201_CREATED, form)
 
     def get_success_url(self):
-        return reverse_lazy('blog:publications', args=[str(self.get_context_data()["view"].kwargs["pk"])])
+        return reverse_lazy('blog:publication', args=[str(self.get_context_data()["view"].kwargs["pk"])])
 
 
 class CommentManipulateMixin(ManipulateMixinBase):
     obj = 'comment'
 
     def get_success_url(self):
-        return reverse_lazy('blog:publications', args=[self.get_context_data()['object']['publication']])
+        return reverse_lazy('blog:publication', args=[self.get_context_data()['object']['publication']])
 
 
 class CommentUpdateView(CommentManipulateMixin, FormView):
@@ -259,14 +259,18 @@ class CommentDeleteView(CommentManipulateMixin, FormView):
         return self.check_status(res, status.HTTP_204_NO_CONTENT, form)
 
 
-def paginated_request_get(request: HttpRequest, url) -> requests.Response:
-    params = request.GET.copy()
+def set_page_params(params):
     params['page'] = params.get('page', 1)
     params['page_size'] = params.get('page_size', 10)
+
+
+def paginated_request_get(request: HttpRequest, url) -> requests.Response:
+    params = request.GET.copy()
+    set_page_params(params)
     return requests.get(url, params)
 
 
-def feed_view(request: HttpRequest) -> HttpResponse:
+def publications_view(request: HttpRequest) -> HttpResponse:
     res = paginated_request_get(request, ServiceUrl.GATEWAY + '/api/v1/publications/')
     return render(request, 'blog/publication-list.html', {'user': get_auth_user(request), 'response': res.json()})
 
@@ -331,3 +335,36 @@ def tag_view(request: HttpRequest, tag: str) -> HttpResponse:
         'tag': tag,
         'response': res.json(),
     })
+
+
+def feed_view(request: HttpRequest) -> HttpResponse:
+    user = get_auth_user(request)
+    if not user['is_authenticated']:
+        return HttpResponseUnauthorized()
+
+    res = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/subscriptions/?follower_uid={user["id"]}')
+    if res.status_code != status.HTTP_200_OK:
+        return render(request, 'blog/publication-list.html', {'user': user,
+                                                              'error_message': 'Subscription service is unavailable'})
+
+    authors = []
+    tags = []
+    for sub in res.json():
+        if sub['type'] == 'user':
+            authors.append(sub['following_uid'])
+        elif sub['type'] == 'tag':
+            tags.append(sub['following_uid'])
+
+    params = request.GET.copy()
+    set_page_params(params)
+    params['author_uid__in'] = ','.join(authors)
+    params['tags__name__in'] = ','.join(tags)
+    res = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/publications/', params)
+    if res.status_code != status.HTTP_200_OK:
+        print(res)
+        raise Exception(res.json())
+    return render(request, 'blog/publication-list.html', {'user': user, 'response': res.json()})
+
+
+# TODO: create 'Subscribe' and 'Unsubscribe' buttons
+# TODO: create Subscription page

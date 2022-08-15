@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 
 
 class Subscription(models.Model):
-    subscription_uid = models.UUIDField(default=uuid.uuid4, editable=False)
+    subscription_uid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     class Type(models.TextChoices):
         USER = 'user', _('user')

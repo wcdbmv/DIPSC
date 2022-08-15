@@ -3,6 +3,7 @@ import uuid
 import django_filters.rest_framework
 
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q
 from django.http import HttpResponse
 from rest_framework import filters, status, viewsets
 
@@ -30,13 +31,24 @@ class VoteViewSet(viewsets.ModelViewSet):
 
 
 class PublicationViewSet(viewsets.ModelViewSet):
-    queryset = Publication.objects.all()
     serializer_class = PublicationSerializer
     pagination_class = Pagination
     filter_backends = [django_filters.rest_framework.DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_fields = ['author_uid', 'tags__name']
     ordering_fields = ['pub_date', 'rating']
     search_fields = ['title', 'body']
+
+    def get_queryset(self):
+        queryset = Publication.objects.all()
+        authors = self.request.query_params.get('author_uid__in')
+        tags = self.request.query_params.get('tags__name__in')
+        if authors:
+            if tags:
+                return queryset.filter(Q(author_uid__in=authors.split(',')) | Q(tags__name__in=tags.split(',')))
+            return queryset.filter(author_uid__in=authors.split(','))
+        if tags:
+            return queryset.filter(tags__name__in=tags.split(','))
+        return queryset
 
 
 class CommentViewSet(viewsets.ModelViewSet):

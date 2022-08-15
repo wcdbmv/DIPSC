@@ -6,7 +6,7 @@
 			<div class="card-body">
 				{% if object.title %}  {# it is a publication #}
 					<h1 class="card-title"><a
-						href="{% url 'blog:publications' object.id %}">{{ object.title }}</a>
+						href="{% url 'blog:publication' object.id %}">{{ object.title }}</a>
 					</h1>
 				{% endif %}
 				<div class="card-subtitle mb-2 text-muted">
@@ -66,6 +66,6 @@
 		</div>
 	{% endfor %}
 	{% if not response.items %}
-		<p class="lead">No content here</p>
+		<p class="lead">{{ error_message|default:"No content here" }}</p>
 	{% endif %}
 </div>
