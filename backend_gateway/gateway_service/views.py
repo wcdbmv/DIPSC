@@ -70,6 +70,11 @@ votes = api_view_redirect(['GET'], f'{ServiceUrl.PUBLICATION}/api/v1/votes/')
 vote = api_view_redirect(['POST'], f'{ServiceUrl.PUBLICATION}/api/v1/vote/')
 
 
+@api_view(['GET'])
+def tag(request: Request, name: str) -> HttpResponse:
+    return redirect(request, f'{ServiceUrl.PUBLICATION}/api/v1/tags/{name}/')
+
+
 def replace_author(item):
     res = raw_request_get_no_query(f'{ServiceUrl.SESSION}/api/v1/users/{item["author_uid"]}/')
     if res.status_code != status.HTTP_200_OK:

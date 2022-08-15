@@ -291,20 +291,36 @@ def check_subscribed(follower_uid, following_uid, return_subscription_uid=False)
     return subscribed
 
 
-def blog_view(request: HttpRequest, username: str) -> HttpResponse:
+def get_user_by_username(username: str):
     res = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/users/?username={username}')
     if res.status_code != status.HTTP_200_OK:
         print(res)
         raise Exception(res.json())
     data = res.json()
     if len(data) == 0:
+        return None
+    return data[0]
+
+
+def get_tag_by_name(name: str):
+    res = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/tags/{name}/')
+    if res.status_code != status.HTTP_200_OK:
+        if res.status_code == status.HTTP_404_NOT_FOUND:
+            return {}
+        print(res)
+        raise Exception(res.json())
+    return res.json()
+
+
+def blog_view(request: HttpRequest, username: str) -> HttpResponse:
+    user = get_user_by_username(username)
+    if user is None:
         return HttpResponseNotFound(f'User with username "{username}" not found')
-    user = data[0]
 
     auth_user = get_auth_user(request)
 
     subscribed = None
-    if auth_user['is_authenticated']:
+    if auth_user['is_authenticated'] and auth_user['username'] != username:
         subscribed = check_subscribed(auth_user['id'], user['id'])
 
     res = paginated_request_get(request, f'{ServiceUrl.GATEWAY}/api/v1/publications/?author_uid={user["id"]}')
@@ -314,6 +330,7 @@ def blog_view(request: HttpRequest, username: str) -> HttpResponse:
     return render(request, 'blog/publication-list.html', {
         'user': auth_user,
         'author_uid': user['id'],
+        'username': user['username'],
         'first_name': user['first_name'],
         'last_name': user['last_name'],
         'response': res.json(),
@@ -351,14 +368,28 @@ class VoteView(View):
 
 
 def tag_view(request: HttpRequest, tag: str) -> HttpResponse:
+    auth_user = get_auth_user(request)
+
+    subscribed = None
+    if auth_user['is_authenticated']:
+        res = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/tags/{tag}/')
+        if res.status_code != status.HTTP_200_OK:
+            if res.status_code == status.HTTP_404_NOT_FOUND:
+                return HttpResponseNotFound(f'Tag {tag} not found')
+            print(res)
+            raise Exception(res.json())
+        tag_uid = res.json()['id']
+        subscribed = check_subscribed(auth_user['id'], tag_uid)
+
     res = paginated_request_get(request, f'{ServiceUrl.GATEWAY}/api/v1/publications/?tags__name={tag}')
     if res.status_code != status.HTTP_200_OK:
         print(res)
         raise Exception(res.json())
     return render(request, 'blog/publication-list.html', {
-        'user': get_auth_user(request),
+        'user': auth_user,
         'tag': tag,
         'response': res.json(),
+        'subscribed': subscribed,
     })
 
 
@@ -383,7 +414,7 @@ def feed_view(request: HttpRequest) -> HttpResponse:
     params = request.GET.copy()
     set_page_params(params)
     params['author_uid__in'] = ','.join(authors)
-    params['tags__name__in'] = ','.join(tags)
+    params['tags__id__in'] = ','.join(tags)
     res = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/publications/', params)
     if res.status_code != status.HTTP_200_OK:
         print(res)
@@ -391,42 +422,38 @@ def feed_view(request: HttpRequest) -> HttpResponse:
     return render(request, 'blog/publication-list.html', {'user': user, 'response': res.json()})
 
 
-def subscribe_author(request: HttpRequest, pk: uuid.UUID) -> HttpResponse:
-    user = get_auth_user(request)
-    if not user['is_authenticated']:
-        return HttpResponseUnauthorized()
+class Subscribe(View):
+    obj = None
+    subscribe = None
 
-    subscribed = check_subscribed(user['id'], str(pk))
-    if subscribed:
-        return HttpResponseBadRequest('Already subscribed')
+    def get(self, request, obj_name: str):
+        follower = get_auth_user(request)
+        if not follower['is_authenticated']:
+            return HttpResponseUnauthorized()
 
-    res = requests.post(f'{ServiceUrl.GATEWAY}/api/v1/subscriptions/', json={
-        'follower_uid': user['id'],
-        'following_uid': str(pk),
-        'type': 'user'
-    })
-    if res.status_code != status.HTTP_201_CREATED:
-        return HttpResponseBadRequest(res.json())
+        if self.obj == 'user':
+            following = get_user_by_username(obj_name)
+        elif self.obj == 'tag':
+            following = get_tag_by_name(obj_name)
 
-    username = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/users/{pk}/').json()['username']
-    return redirect('blog:user_publications', username)
+        subscribed = check_subscribed(follower['id'], following['id'], True)
+        if bool(subscribed) == self.subscribe:
+            return HttpResponseBadRequest(f'Already {"un" * (not self.subscribe)}subscribed')
 
+        if self.subscribe:
+            res = requests.post(f'{ServiceUrl.GATEWAY}/api/v1/subscriptions/', json={
+                'follower_uid': follower['id'],
+                'following_uid': following['id'],
+                'type': self.obj
+            })
+            if res.status_code != status.HTTP_201_CREATED:
+                return HttpResponseBadRequest(res.json())
+        else:
+            res = requests.delete(f'{ServiceUrl.GATEWAY}/api/v1/subscriptions/{subscribed}/')
+            if res.status_code != status.HTTP_204_NO_CONTENT:
+                return HttpResponseBadRequest(res.json())
 
-def unsubscribe_author(request: HttpRequest, pk: uuid.UUID) -> HttpResponse:
-    user = get_auth_user(request)
-    if not user['is_authenticated']:
-        return HttpResponseUnauthorized()
-
-    subscribed = check_subscribed(user['id'], str(pk), True)
-    if not subscribed:
-        return HttpResponseBadRequest('Already unsubscribed')
-
-    res = requests.delete(f'{ServiceUrl.GATEWAY}/api/v1/subscriptions/{subscribed}/')
-    if res.status_code != status.HTTP_204_NO_CONTENT:
-        return HttpResponseBadRequest(res.json())
-
-    username = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/users/{pk}/').json()['username']
-    return redirect('blog:user_publications', username)
+        return redirect('blog:user_publications' if self.obj == 'user' else 'blog:tag', obj_name)
 
 
 # TODO: create Subscription page

@@ -36,7 +36,11 @@ urlpatterns = [
     # ex: /blog/comments/15/downvote/
     path('comments/<uuid:pk>/downvote/', VoteView.as_view(content_type='comment', value=-1), name='comment_downvote'),
     #
-    path('user/<uuid:pk>/subscribe/', subscribe_author, name='subscribe_author'),
+    path('user/<str:obj_name>/subscribe/', Subscribe.as_view(obj='user', subscribe=True), name='subscribe_author'),
     #
-    path('user/<uuid:pk>/unsubscribe/', unsubscribe_author, name='unsubscribe_author'),
+    path('user/<str:obj_name>/unsubscribe/', Subscribe.as_view(obj='user', subscribe=False), name='unsubscribe_author'),
+    #
+    path('tag/<str:obj_name>/subscribe/', Subscribe.as_view(obj='tag', subscribe=True), name='subscribe_tag'),
+    #
+    path('tag/<str:obj_name>/unsubscribe/', Subscribe.as_view(obj='tag', subscribe=False), name='unsubscribe_tag'),
 ]

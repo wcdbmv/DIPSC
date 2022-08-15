@@ -10,14 +10,14 @@
 				<hr class="my-4">
 				<div class="row">
 					{% if subscribed %}
-						<a href="{% url 'blog:unsubscribe_author' author_uid %}"
+						<a href="{% url 'blog:unsubscribe_author' username %}"
 						   class="col-md-2 pull-right">
 							<button type="button" class="btn btn-primary btn-block">
 								Unsubscribe
 							</button>
 						</a>
 					{% else %}
-						<a href="{% url 'blog:subscribe_author' author_uid %}"
+						<a href="{% url 'blog:subscribe_author' username %}"
 						   class="col-md-2 pull-right">
 							<button type="button" class="btn btn-primary btn-block">
 								Subscribe
@@ -30,6 +30,26 @@
 	{% elif tag %}
 		<div class="jumbotron">
 			<h1 class="display-4">Tag: {{ tag }}</h1>
+			{% if subscribed is not None %}
+				<hr class="my-4">
+				<div class="row">
+					{% if subscribed %}
+						<a href="{% url 'blog:unsubscribe_tag' tag %}"
+						   class="col-md-2 pull-right">
+							<button type="button" class="btn btn-primary btn-block">
+								Unsubscribe
+							</button>
+						</a>
+					{% else %}
+						<a href="{% url 'blog:subscribe_tag' tag %}"
+						   class="col-md-2 pull-right">
+							<button type="button" class="btn btn-primary btn-block">
+								Subscribe
+							</button>
+						</a>
+					{% endif %}
+				</div>
+			{% endif %}
 		</div>
 	{% endif %}
 

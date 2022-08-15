@@ -41,13 +41,19 @@ class PublicationViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = Publication.objects.all()
         authors = self.request.query_params.get('author_uid__in')
-        tags = self.request.query_params.get('tags__name__in')
+        tag_names = self.request.query_params.get('tags__name__in')
+        tag_ids = self.request.query_params.get('tags__id__in')
+
         if authors:
-            if tags:
-                return queryset.filter(Q(author_uid__in=authors.split(',')) | Q(tags__name__in=tags.split(',')))
+            if tag_names:
+                return queryset.filter(Q(author_uid__in=authors.split(',')) | Q(tags__name__in=tag_names.split(',')))
+            if tag_ids:
+                return queryset.filter(Q(author_uid__in=authors.split(',')) | Q(tags__id__in=tag_ids.split(',')))
             return queryset.filter(author_uid__in=authors.split(','))
-        if tags:
-            return queryset.filter(tags__name__in=tags.split(','))
+        if tag_names:
+            return queryset.filter(tags__name__in=tag_names.split(','))
+        if tag_ids:
+            return queryset.filter(tags__id__in=tag_ids.split(','))
         return queryset
 
 
