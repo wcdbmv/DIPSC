@@ -43,4 +43,6 @@ urlpatterns = [
     path('tag/<str:obj_name>/subscribe/', Subscribe.as_view(obj='tag', subscribe=True), name='subscribe_tag'),
     #
     path('tag/<str:obj_name>/unsubscribe/', Subscribe.as_view(obj='tag', subscribe=False), name='unsubscribe_tag'),
+    #
+    path('subscriptions/', subscriptions, name='subscriptions')
 ]

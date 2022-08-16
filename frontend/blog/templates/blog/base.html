@@ -34,6 +34,9 @@
 					<li class="nav-item {% if request.get_full_path == '/blog/feed/' %}active{% endif %}">
 						<a class="nav-link" href="{% url 'blog:feed' %}">Feed</a>
 					</li>
+					<li class="nav-item {% if request.get_full_path == '/blog/subscriptions/' %}active{% endif %}">
+						<a class="nav-link" href="{% url 'blog:subscriptions' %}">Subscriptions</a>
+					</li>
 					<li class="nav-item {% if user.username in request.get_full_path %}active{% endif %}">
 						<a class="nav-link" href="{% url 'blog:user_publications' user.username %}">My
 							Blog</a>

@@ -396,12 +396,11 @@ def tag_view(request: HttpRequest, tag: str) -> HttpResponse:
 def feed_view(request: HttpRequest) -> HttpResponse:
     user = get_auth_user(request)
     if not user['is_authenticated']:
-        return HttpResponseUnauthorized()
+        return error(request, user, 'You must be logged in to see this page')
 
     res = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/subscriptions/?follower_uid={user["id"]}')
     if res.status_code != status.HTTP_200_OK:
-        return render(request, 'blog/publication-list.html', {'user': user,
-                                                              'error_message': 'Subscription service is unavailable'})
+        return error(request, user, 'Subscription service is unavailable')
 
     authors = []
     tags = []
@@ -429,7 +428,7 @@ class Subscribe(View):
     def get(self, request, obj_name: str):
         follower = get_auth_user(request)
         if not follower['is_authenticated']:
-            return HttpResponseUnauthorized()
+            return error(request, follower, 'You must be logged in to see this page')
 
         if self.obj == 'user':
             following = get_user_by_username(obj_name)
@@ -456,4 +455,39 @@ class Subscribe(View):
         return redirect('blog:user_publications' if self.obj == 'user' else 'blog:tag', obj_name)
 
 
-# TODO: create Subscription page
+def error(request, user, message):
+    return render(request, 'blog/error.html', {'user': user, 'error': message})
+
+
+def subscriptions(request: HttpRequest) -> HttpResponse:
+    user = get_auth_user(request)
+    if not user['is_authenticated']:
+        return error(request, user, 'You must be logged in to see this page')
+
+    res = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/subscriptions/?follower_uid={user["id"]}')
+    if res.status_code != status.HTTP_200_OK:
+        return error(request, user, 'Subscription service is unavailable')
+
+    authors = []
+    tags = []
+    for sub in res.json():
+        if sub['type'] == 'user':
+            authors.append(sub['following_uid'])
+        elif sub['type'] == 'tag':
+            tags.append(sub['following_uid'])
+
+    users = []
+    for author in authors:
+        res = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/users/{author}/')
+        if res.status_code != status.HTTP_200_OK:
+            return error(request, user, 'Session service is unavailable')
+        users.append(res.json())
+
+    tag_names = []
+    for tag in tags:
+        res = requests.get(f'{ServiceUrl.GATEWAY}/api/v1/tags_uid/{tag}/')
+        if res.status_code != status.HTTP_200_OK:
+            return error(request, user, 'Publication service is unavailable')
+        tag_names.append(res.json())
+
+    return render(request, 'blog/subscriptions.html', {'user': user, 'users': users, 'tags': tag_names})

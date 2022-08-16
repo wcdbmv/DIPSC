@@ -21,7 +21,7 @@ from blog.views import LoginView, RegisterView, logout_view
 
 
 urlpatterns = [
-    path('', lambda r: HttpResponseRedirect('blog/feed/')),
+    path('', lambda r: HttpResponseRedirect('blog/publications/')),
     path('admin/', admin.site.urls),
     path('blog/', include('blog.urls')),
     path('login/', LoginView.as_view(), name='login'),

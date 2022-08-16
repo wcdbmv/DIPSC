@@ -1,0 +1,39 @@
+{% extends "blog/base.html" %}
+
+{% block content %}
+
+	<p class="lead">Tags:</p>
+
+	<div class="card-list">
+		{% for object in tags %}
+			<div class="card shadow-sm mb-4">
+				<div class="card-body">
+					<h3 class="card-text"><a
+						href="{% url 'blog:tag' object.name %}">{{ object.name }}</a>
+					</h3>
+				</div>
+			</div>
+		{% endfor %}
+		{% if not tags %}
+			<p class="lead"><i>{{ error_message|default:"No content here" }}</i></p>
+		{% endif %}
+	</div>
+
+	<p class="lead">Authors:</p>
+
+	<div class="card-list">
+		{% for object in users %}
+			<div class="card shadow-sm mb-4">
+				<div class="card-body">
+					<h3 class="card-text"><a
+						href="{% url 'blog:user_publications' object.username %}">{{ object.first_name }} {{ object.last_name }}</a>
+					</h3>
+				</div>
+			</div>
+		{% endfor %}
+		{% if not users %}
+			<p class="lead"><i>{{ error_message|default:"No content here" }}</i></p>
+		{% endif %}
+	</div>
+
+{% endblock content %}
