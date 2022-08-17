@@ -4,6 +4,9 @@
 	{% for object in response.items %}
 		<div class="card shadow-sm mb-4">
 			<div class="card-body">
+			{% if object.view_date %}
+				<p class="card-text">Viewed at {{ object.view_date }} by {{ object.viewer }}</p>
+			{% else %}
 				{% if object.title %}  {# it is a publication #}
 					<h1 class="card-title"><a
 						href="{% url 'blog:publication' object.id %}">{{ object.title }}</a>
@@ -62,6 +65,7 @@
 						</a>
 					</div>
 				{% endif %}
+			{% endif %}
 			</div>
 		</div>
 	{% endfor %}

@@ -339,13 +339,25 @@ def blog_view(request: HttpRequest, username: str) -> HttpResponse:
 
 
 def publication_view(request: HttpRequest, pk: uuid.UUID) -> HttpResponse:
-    res = paginated_request_get(request, f'{ServiceUrl.GATEWAY}/api/v1/publications/{pk}/')
+    auth_user = get_auth_user(request)
+    if auth_user['is_authenticated'] and auth_user['is_superuser']:
+        return statistics_view(request, pk, auth_user)
+
+    viewer_uid = f'?viewer_uid={auth_user["id"]}' if auth_user['is_authenticated'] else ''
+    res = paginated_request_get(request, f'{ServiceUrl.GATEWAY}/api/v1/publications/{pk}/{viewer_uid}')
     if res.status_code != status.HTTP_200_OK:
         if res.status_code == status.HTTP_404_NOT_FOUND:
             return HttpResponseNotFound(f'Publication with uuid {pk} not found')
         print(res)
         raise Exception(res.json())
-    return render(request, 'blog/publication.html', {'user': get_auth_user(request), 'response': res.json()})
+    return render(request, 'blog/publication.html', {'user': auth_user, 'response': res.json()})
+
+
+def statistics_view(request: HttpRequest, pk: uuid.UUID, user) -> HttpResponse:
+    res = paginated_request_get(request, f'{ServiceUrl.GATEWAY}/api/v1/statistics/{pk}/')
+    if res.status_code != status.HTTP_200_OK:
+        return error(request, user, 'Statistics service is unavailable')
+    return render(request, 'blog/publication.html', {'user': user, 'response': res.json()})
 
 
 class VoteView(View):

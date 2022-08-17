@@ -80,12 +80,16 @@ def tag_uid(request: Request, uid: uuid.UUID) -> HttpResponse:
     return redirect(request, f'{ServiceUrl.PUBLICATION}/api/v1/tags_uid/{uid}/')
 
 
-def replace_author(item):
-    res = raw_request_get_no_query(f'{ServiceUrl.SESSION}/api/v1/users/{item["author_uid"]}/')
+def replace_user(item, uid_field, new_field):
+    res = raw_request_get_no_query(f'{ServiceUrl.SESSION}/api/v1/users/{item[uid_field]}/')
     if res.status_code != status.HTTP_200_OK:
         return make_response(res)  # TODO
-    item['author'] = res.json()
-    del item['author_uid']
+    item[new_field] = res.json()
+    del item[uid_field]
+
+
+def replace_author(item):
+    return replace_user(item, 'author_uid', 'author')
 
 
 def replace_authors(items):
@@ -135,6 +139,12 @@ class Publication(APIView):
         data.update(res.json())
         replace_authors(data['items'])
 
+        stat = {'publication_uid': data['publication']['id']}
+        if viewer_uid := request.query_params.get('viewer_uid'):
+            stat['viewer_uid'] = viewer_uid
+        res = requests.post(f'{ServiceUrl.STATISTICS}/api/v1/statistics/', json=stat)
+        # no matter
+
         return HttpResponse(content=json.dumps(data), content_type='application/json')
 
     @staticmethod
@@ -154,3 +164,31 @@ comments = api_view_redirect(['GET', 'POST'], f'{ServiceUrl.PUBLICATION}/api/v1/
 @api_view(['GET', 'PATCH', 'DELETE'])
 def comment(request: Request, uid: uuid.UUID) -> HttpResponse:
     return redirect(request, f'{ServiceUrl.PUBLICATION}/api/v1/comments/{uid}/')
+
+
+# Statistics Service
+
+
+@api_view(['GET'])
+def statistics(request: Request, uid: uuid.UUID) -> HttpResponse:
+    res = raw_request_get_no_query(f'{ServiceUrl.PUBLICATION}/api/v1/publications/{uid}/')
+    if res.status_code != status.HTTP_200_OK:
+        return make_response(res)
+    data = {'publication': res.json()}
+
+    replace_author(data['publication'])
+
+    res = raw_redirect_get_with_query(request, f'{ServiceUrl.STATISTICS}/api/v1/statistics/?publication_uid={uid}')
+    if res.status_code != status.HTTP_200_OK:
+        return make_response(res)
+
+    data.update(res.json())
+
+    for item in data['items']:
+        if item['viewer_uid']:
+            res = replace_user(item, 'viewer_uid', 'viewer')
+        else:
+            item['viewer'] = '%%guest%%'
+            del item['viewer_uid']
+
+    return HttpResponse(content=json.dumps(data), content_type='application/json')

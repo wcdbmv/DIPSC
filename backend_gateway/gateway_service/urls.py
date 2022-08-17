@@ -3,6 +3,7 @@ from django.urls import path
 from .views import users, user, user_by_token
 from .views import tags, tag, tag_uid, votes, vote, Publications, Publication, comments, comment
 from .views import subscriptions, subscription
+from .views import statistics
 
 
 urlpatterns = [
@@ -22,4 +23,6 @@ urlpatterns = [
 
     path(r'subscriptions/', subscriptions),
     path(r'subscriptions/<uuid:uid>/', subscription),
+
+    path(r'statistics/<uuid:uid>/', statistics),
 ]

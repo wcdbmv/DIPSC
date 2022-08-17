@@ -52,5 +52,5 @@ document.getElementById('search').addEventListener('click', event => {
 	const input = document.getElementById('search-input').value;
 	const queryParams = new URLSearchParams(window.location.search);
 	queryParams.set("search", input);
-	location.href = `?${queryParams.toString()}`
+	location.href = `/blog/publications/?${queryParams.toString()}`
 });
