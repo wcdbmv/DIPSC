@@ -1,0 +1,57 @@
+name: Django
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up python
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10.4'
+
+    - name: Install requirements
+      run: python -m pip install -r requirements.txt
+
+    - name: Migrate Session Service
+      run: python backend_session/manage.py migrate
+
+    - name: Migrate Publication Service
+      run: python backend_publication/manage.py migrate
+
+    - name: Migrate Subscription Service
+      run: python backend_subscription/manage.py migrate
+
+    - name: Migrate Statistics Service
+      run: python backend_statistics/manage.py migrate
+
+    - name: Test Gateway Service
+      run: cd backend_gateway && python manage.py test
+
+    - name: Test Session Service
+      run: cd backend_session && python manage.py test
+
+    - name: Test Publication Service
+      run: cd backend_publication && python manage.py test
+
+    - name: Test Subscription Service
+      run: cd backend_subscription && python manage.py test
+
+    - name: Test Statistics Service
+      run: cd backend_statistics && python manage.py test
+
+#    - name: Deploy gateway_service to Heroku
+#      uses: akhileshns/heroku-deploy@v3.12.12
+#      with:
+#        heroku_api_key: ${{secrets.HEROKU_API_KEY}}
+#        heroku_app_name: gateway_service
+#        heroku_email: ${{secrets.HEROKU_EMAIL}}
+#        usedocker: true
+#        appdir: backend_gateway
