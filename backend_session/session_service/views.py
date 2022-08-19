@@ -1,4 +1,5 @@
 import django_filters.rest_framework
+import rest_framework_simplejwt.exceptions
 from rest_framework import pagination, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.request import Request
@@ -20,7 +21,10 @@ class UuidUserViewSet(viewsets.ModelViewSet):
 @api_view(['POST'])
 def user_by_token(request: Request) -> Response:
     access_token_str = request.data['token']
-    access_token_obj = AccessToken(access_token_str)
+    try:
+        access_token_obj = AccessToken(access_token_str)
+    except rest_framework_simplejwt.exceptions.TokenError:
+        return Response(status=404)
     user_id = access_token_obj['user_id']
     user = UuidUser.objects.get(id=user_id)
     return Response(UuidUserSerializer(user).data)

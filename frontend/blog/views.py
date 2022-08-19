@@ -127,7 +127,10 @@ class LoginFormTemplateView(GuestRequiredMixin, FormView):
     success_url = reverse_lazy('blog:publications')
 
     def form_valid(self, form: LoginForm) -> HttpResponse:
-        res, _json = get_auth_tokens(form)
+        try:
+            res, _json = get_auth_tokens(form)
+        except Exception as e:
+            return error(self.request, {'is_authenticated': False}, 'Session service is unavailable')
         if res.status_code != status.HTTP_200_OK:
             add_error_in_form(form, _json)
             return super().form_invalid(form)
@@ -330,8 +333,8 @@ def publications_view(request: HttpRequest) -> HttpResponse:
     res, _json = paginated_request_get('GET-PUBLICATIONS', request, f'{ServiceUrl.GATEWAY}/api/v1/publications/')
     if res.status_code != status.HTTP_200_OK:
         if res.status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
-            error(request, get_auth_user(request), 'Publication service is unavailable')
-        error(request, get_auth_user(request), f'{res.status_code}: {_json}')
+            return error(request, get_auth_user(request), 'Publication service is unavailable')
+        return error(request, get_auth_user(request), f'{res.status_code}: {_json}')
     return render(request, 'blog/publication-list.html', {'user': get_auth_user(request), 'response': _json})
 
 
@@ -391,8 +394,7 @@ def blog_view(request: HttpRequest, username: str) -> HttpResponse:
         f'{ServiceUrl.GATEWAY}/api/v1/publications/?author_uid={user["id"]}'
     )
     if res.status_code != status.HTTP_200_OK:
-        print(res)
-        raise Exception(_json)
+        return error(request, auth_user, 'Publication service is unavailable')
     return render(request, 'blog/publication-list.html', {
         'user': auth_user,
         'author_uid': user['id'],

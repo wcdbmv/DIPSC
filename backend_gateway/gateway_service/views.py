@@ -55,7 +55,7 @@ class ServiceUrl:
 
 def req(method: str, url: str, **kwargs) -> requests.Response:
     res = requests.request(method, url, **kwargs)
-    if res.status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
+    if res.status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
         res.raise_for_status()
     return res
 
