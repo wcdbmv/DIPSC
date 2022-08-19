@@ -39,6 +39,7 @@ class PublicationViewSet(viewsets.ModelViewSet):
     filter_backends = [django_filters.rest_framework.DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_fields = ['author_uid', 'tags__name']
     ordering_fields = ['pub_date', 'rating']
+    ordering = ['-pub_date']
     search_fields = ['title', 'body']
 
     def get_queryset(self):

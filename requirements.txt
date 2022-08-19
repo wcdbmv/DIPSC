@@ -1,3 +1,4 @@
+circuitbreaker
 django
 djangorestframework
 djangorestframework-simplejwt
