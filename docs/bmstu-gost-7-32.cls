@@ -2,7 +2,7 @@
 
 \ProvidesClass{bmstu-gost-7-32}[202/02/25 BMSTU GOST 7.32-2017]
 
-\LoadClass[14pt]{extreport}
+\LoadClass[a4paper, 14pt]{extreport}
 
 \RequirePackage[T2A]{fontenc}
 \RequirePackage[utf8]{inputenc}
@@ -59,25 +59,22 @@
 \algrenewtext{EndBlock}{\textbf{Конец блока}}
 \algrenewtext{ElsIf}{\textbf{иначе если }}
 %%
-\usepackage{matlab-prettifier}
-\usepackage{listings}
-\usepackage{listingsutf8}
-\usepackage{xcolor}
-\let\ph\mlplaceholder % shorter macro
-\lstMakeShortInline"
-
+\RequirePackage{listings}
+\RequirePackage{listingsutf8}
+\RequirePackage{xcolor}
 \lstset{
-	style              = Matlab-editor,
-	basicstyle         = \footnotesize\ttfamily,
-	breakatwhitespace  = true,
-	breaklines         = true,
-	frame              = single,
-	inputencoding      = utf8/koi8-r,
-	mlshowsectionrules = true,
-	numbers            = left,
-	numbersep          = 5pt,
-	numberstyle        = \tiny\ttfamily\color{gray},
-	tabsize            = 2,
+	basicstyle=\ttfamily,
+	breakatwhitespace=true,
+	breaklines=true,
+	commentstyle=\color{gray},
+	frame=single,
+	inputencoding=utf8/koi8-r,
+	keywordstyle=\color{blue}\bfseries,
+	showstringspaces=false,
+	stringstyle=\color{red},
+	tabsize=8,
+	xleftmargin=3pt,
+	xrightmargin=3pt,
 }
 %%
 \newcommand{\code}[1]{\texttt{#1}}

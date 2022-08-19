@@ -109,6 +109,23 @@
 	}
 }
 
+% Установка заголовков РПЗ
+\newcommand{\titlepagenotetitle}[2]
+{
+	{
+		\LARGE \bfseries
+		РАСЧЕТНО-ПОЯСНИТЕЛЬНАЯ ЗАПИСКА \\
+	}
+	\vspace{5mm}
+	{
+		\Large \itshape
+		#1 \\
+		\vspace{5mm}
+		НА ТЕМУ: \\
+		«#2» \\
+	}
+}
+
 % Установка заголовков отчета
 \newcommand{\titlepagereporttitle}[4]
 {
@@ -150,7 +167,30 @@
 	}
 }
 
-% Создание титульной страницы отчета
+% Создание титульной страницы РПЗ к КР
+\newcommand{\makecourseworktitle}[8]
+{
+	\documentmeta{РПЗ к КР}{#5}{#4}{#3}
+
+	\begin{titlepage}
+		\centering
+
+		\titlepageheader{#1}{#2}
+		\vspace{15.8mm}
+
+		\titlepagenotetitle{К КУРСОВОЙ РАБОТЕ}{#3}
+		\vfill
+
+		\titlepageauthors{#4}{#5}{Руководитель курсовой работы}{#6}{#7}{#8}{}
+		\vspace{14mm}
+
+		\textit{{\the\year} г.}
+	\end{titlepage}
+
+	\setcounter{page}{2}
+}
+
+% Создание титульной страницы отчёта
 \newcommand{\makereporttitle}[9]
 {
 	\documentmeta{Отчёт}{#8}{#3 #4}{#5}

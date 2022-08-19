@@ -1,0 +1,182 @@
+%% Методические указания к выполнению, оформлению и защите выпускной квалификационной работы бакалавра
+%% 2.6 Технологический раздел
+%%
+%% Технологический раздел содержит обоснованный выбор средств программной реализации, описание основных (нетривиальных) моментов разработки и методики тестирования созданного программного обеспечения.
+%%
+%% В этом же разделе описывается информация, необходимая для сборки и запуска разработанного программного обеспечения, форматы входных, выходных и конфигурационных файлов (если такие имеются), а также интерфейс пользователя и руководство пользователя.
+%%
+%% Если для правильного функционирования разработанного программного обеспечения требуется некоторая инфраструктура (веб-приложение, база данных, серверное приложение), уместно представить её с помощью диаграммы развёртывания UML.
+%%
+%% Как уже говорилось, часть технологического раздела должна быть посвящена тестированию разработанного программного обеспечения.
+%%
+%% Модульное тестирование описывается в технологическом разделе.
+%%
+%% Системное тестирование может быть описано в технологическом или экспериментальном разделах, в зависимости от глубины его реализации и тематики бакалаврской работы.
+%%
+%% При проведении тестирования разработанного программного обеспечения следует широко использовать специализированные программные приложения: различные статические анализаторы кода (например, clang); для тестирования утечек памяти в языках программирования, где отсутствует автоматическая «сборка мусора», Valgrind, Doctor Memory и их аналоги, и т. п.
+%%
+%% Рекомендуемый объём технологического раздела 20—25 страниц.
+
+
+\chapter{Технологический раздел}
+
+\section{Структура баз данных}
+
+На основе описанных выше сущностей для каждого из сервисов были разработаны спецификации таблиц баз данных, приведённых на рисунке \ref{img:erd-crow's-foot}.
+
+\begin{table}[H]
+	\caption{Спецификация таблицы User}
+	\begin{tabular}{|l|l|l|}
+		\hline
+		\multicolumn{1}{|c|}{\textbf{Имя атрибута}} & \multicolumn{1}{c|}{\textbf{Тип атрибута}} & \multicolumn{1}{c|}{\textbf{Описание атрибута}} \\ \hline
+		id                                          & UUID4                                      & Идентификатор пользователя                      \\ \hline
+		email                                       & string                                     & Электронная почта                               \\ \hline
+		password\_hash                              & string                                     & Хеш пароля                                      \\ \hline
+		full\_name                                  & string                                     & ФИО                                             \\ \hline
+		role                                        & string                                     & Роль \\ \hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\caption{Спецификация таблицы Tag}
+	\begin{tabular}{|l|l|l|}
+		\hline
+		\multicolumn{1}{|c|}{\textbf{Имя атрибута}} & \multicolumn{1}{c|}{\textbf{Тип атрибута}} & \multicolumn{1}{c|}{\textbf{Описание атрибута}} \\ \hline
+		id                                          & UUID4                                      & Идентификатор тега                              \\ \hline
+		name                                        & string                                     & Категория                                       \\ \hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\caption{Спецификация таблицы Publication}
+	\begin{tabular}{|l|l|l|}
+		\hline
+		\multicolumn{1}{|c|}{\textbf{Имя атрибута}} & \multicolumn{1}{c|}{\textbf{Тип атрибута}} & \multicolumn{1}{c|}{\textbf{Описание атрибута}} \\ \hline
+		id                                          & UUID4                                      & Идентификатор публикации                        \\ \hline
+		author\_id                                  & UUID4                                      & Идентификатор автора                            \\ \hline
+		title                                       & string                                     & Заголовок                                       \\ \hline
+		body                                        & string                                     & Тело                                            \\ \hline
+		pub\_date                                   & timestamp                                  & Дата публикации                                 \\ \hline
+		rating                                      & int                                        & Рейтинг                                         \\ \hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\caption{Спецификация таблицы Comment}
+	\begin{tabular}{|l|l|l|}
+		\hline
+		\multicolumn{1}{|c|}{\textbf{Имя атрибута}} & \multicolumn{1}{c|}{\textbf{Тип атрибута}} & \multicolumn{1}{c|}{\textbf{Описание атрибута}} \\ \hline
+		id                                          & UUID4                                      & Идентификатор комментария                       \\ \hline
+		author\_id                                  & UUID4                                      & Идентификатор автора                            \\ \hline
+		publication\_id                             & UUID4                                      & Идентификатор публикации                        \\ \hline
+		body                                        & string                                     & Тело                                            \\ \hline
+		pub\_date                                   & timestamp                                  & Дата публикации комментария                     \\ \hline
+		rating                                      & int                                        & Рейтинг                                         \\ \hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\caption{Спецификация таблицы Subscription}
+	\begin{tabular}{|l|l|l|}
+		\hline
+		\multicolumn{1}{|c|}{\textbf{Имя атрибута}} & \multicolumn{1}{c|}{\textbf{Тип атрибута}} & \multicolumn{1}{c|}{\textbf{Описание атрибута}} \\ \hline
+		id                                          & UUID4                                      & Идентификатор сущности                          \\ \hline
+		user\_id                                    & UUID4                                      & Идентификатор пользователя                      \\ \hline
+		sub\_id                                     & UUID4                                      & Идентификатор объекта подписки                  \\ \hline
+		type                                        & string                                     & Тип подписки (Тег или Автор)                    \\ \hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\caption{Спецификация таблицы Publication\_tag}
+	\begin{tabular}{|l|l|l|}
+		\hline
+		\multicolumn{1}{|c|}{\textbf{Имя атрибута}} & \multicolumn{1}{c|}{\textbf{Тип атрибута}} & \multicolumn{1}{c|}{\textbf{Описание атрибута}} \\ \hline
+		id                                          & UUID4                                      & Идентификатор сущности                          \\ \hline
+		publication\_id                             & UUID4                                      & Идентификатор публикации                        \\ \hline
+		tag\_id                                     & UUID4                                      & Идентификатор тега                              \\ \hline
+	\end{tabular}
+\end{table}
+
+\section{Сборка и деплой системы}
+
+Для автоматической сборки проекта используется функциональность Github Actions \cite{github-actions}.
+При отправке изменений в master ветку репозитория автоматически запускается сборка и тестирование каждого из микросервисов.
+Конфигурация запуска автоматической сборки и тестирования
+представлена на листинге \ref{lst:ci-cd}.
+
+\begin{lstlisting}[
+	caption={Конфигурация запуска автоматической сборки и тестирования},
+	label={lst:ci-cd},
+]
+name: Django
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10.4'
+
+    - name: Install requirements
+      run: python -m pip install -r requirements.txt
+
+    - name: Migrate Session Service
+      run: python backend_session/manage.py migrate
+
+    - name: Migrate Publication Service
+      run: python backend_publication/manage.py migrate
+
+    - name: Migrate Subscription Service
+      run: python backend_subscription/manage.py migrate
+
+    - name: Migrate Statistics Service
+      run: python backend_statistics/manage.py migrate
+
+    - name: Test Gateway Service
+      run: cd backend_gateway && python manage.py test
+
+    - name: Test Session Service
+      run: cd backend_session && python manage.py test
+
+    - name: Test Publication Service
+      run: cd backend_publication && python manage.py test
+
+    - name: Test Subscription Service
+      run: cd backend_subscription && python manage.py test
+
+    - name: Test Statistics Service
+      run: cd backend_statistics && python manage.py test
+\end{lstlisting}
+
+Для развертывания системы используется docker compose, каждый сервис и база данных каждого сервиса разворачиваются в отдельном контейнере.
+Все контейнеры микросервисы связаны общей сетью, каждый микросервис связан отдельной сетью с контейнером с его базой данных.
+
+\section{Деградация системы}
+
+При отказе сервиса статистики должны продолжить полноценно работать все пользовательские сценарии за исключением просмотра статистики.
+
+При отказе очередей для сбора статистики должны продолжить полноценно работать все пользовательские сценарии, одна статистика в это время собираться не будет.
+
+При отказе сервиса подписок должны продолжить работать следующие пользовательские сценарии, кроме следующих:
+
+\begin{itemize}
+	\item подписка на автора;
+	\item подписка на тэг;
+	\item отписка от автора;
+	\item отписка от тега;
+	\item просмотр своей ленты публикаций по подпискам.
+\end{itemize}
+
+
+%\section{Выводы}
