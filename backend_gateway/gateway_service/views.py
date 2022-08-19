@@ -137,7 +137,7 @@ class Publication(APIView):
         if res.status_code != status.HTTP_200_OK:
             return make_response(res)
         data.update(res.json())
-        replace_authors(data['items'])
+        replace_authors(data.get('items', []))
 
         stat = {'publication_uid': data['publication']['id']}
         if viewer_uid := request.query_params.get('viewer_uid'):
