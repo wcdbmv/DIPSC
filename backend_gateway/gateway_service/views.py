@@ -118,7 +118,7 @@ def circuit_api_view_redirect(http_method_names: list[str], service_name, circui
 
 # Session Service
 
-users = circuit_api_view_redirect(['GET', 'POST'], 'Session', session_request, '/api/v1/users')
+users = circuit_api_view_redirect(['GET', 'POST'], 'Session', session_request, '/api/v1/users/')
 user_by_token = circuit_api_view_redirect(['POST'], 'Session', session_request, '/api/v1/user-by-token/')
 
 

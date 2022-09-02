@@ -333,7 +333,7 @@ def publications_view(request: HttpRequest) -> HttpResponse:
     res, _json = paginated_request_get('GET-PUBLICATIONS', request, f'{ServiceUrl.GATEWAY}/api/v1/publications/')
     if res.status_code != status.HTTP_200_OK:
         if res.status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
-            return error(request, get_auth_user(request), 'Publication service is unavailable')
+            return error(request, get_auth_user(request), 'Publication or session service is unavailable')
         return error(request, get_auth_user(request), f'{res.status_code}: {_json}')
     return render(request, 'blog/publication-list.html', {'user': get_auth_user(request), 'response': _json})
 

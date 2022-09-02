@@ -58,6 +58,8 @@ class PublicationViewSet(viewsets.ModelViewSet):
             return queryset.filter(tags__name__in=tag_names.split(','))
         if tag_ids:
             return queryset.filter(tags__id__in=tag_ids.split(','))
+        if authors is not None and tag_ids is not None:
+            return Publication.objects.none()
         return queryset
 
 
