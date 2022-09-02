@@ -1,0 +1,54 @@
+version: "3.7"
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8080:8080"
+
+  gateway:
+    build:
+      context: ./backend_gateway
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8081:8081"
+
+  session:
+    build:
+      context: ./backend_session
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8082:8082"
+
+  publication:
+    build:
+      context: ./backend_publication
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      - session
+    ports:
+      - "8083:8083"
+
+  subscription:
+    build:
+      context: ./backend_subscription
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      - session
+      - publication
+    ports:
+      - "8084:8084"
+
+  statistics:
+    build:
+      context: ./backend_statistics
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8085:8085"
