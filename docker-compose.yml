@@ -21,6 +21,9 @@ services:
       context: ./backend_session
       dockerfile: Dockerfile
     restart: always
+    networks:
+      - common
+      - session
     ports:
       - "8082:8082"
 
@@ -31,6 +34,9 @@ services:
     restart: always
     depends_on:
       - session
+    networks:
+      - common
+      - publication
     ports:
       - "8083:8083"
 
@@ -42,6 +48,9 @@ services:
     depends_on:
       - session
       - publication
+    networks:
+      - common
+      - subscription
     ports:
       - "8084:8084"
 
@@ -49,6 +58,21 @@ services:
     build:
       context: ./backend_statistics
       dockerfile: Dockerfile
+    networks:
+      - common
+      - statistics
     restart: always
     ports:
       - "8085:8085"
+
+networks:
+  common:
+    driver: bridge
+  session:
+    driver: bridge
+  publication:
+    driver: bridge
+  subscription:
+    driver: bridge
+  statistics:
+    driver: bridge
